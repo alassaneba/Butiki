@@ -1,0 +1,344 @@
+import { useMemo } from 'react'
+import { useStore } from '../store/useStore'
+import { 
+  TrendingUp, Users, Package, ShoppingCart, 
+  ArrowUpRight, ArrowDownRight, Calendar,
+  ChevronRight, Activity, Database, Cloud
+} from 'lucide-react'
+import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import SmartAdvisor from '../components/SmartAdvisor'
+import { CustomAreaChart } from '../components/ui/Charts'
+import clsx from 'clsx'
+
+function StatCard({ title, value, sub, icon: Icon, color, trend, trendValue, delay = 0, extra }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="card-ultra-compact group border border-border/50 bg-card/50 backdrop-blur-sm relative overflow-hidden"
+    >
+      <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+        <Icon size={70} strokeWidth={3} />
+      </div>
+      
+      <div className="flex justify-between items-start relative z-10">
+        <div className="w-full">
+          <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1.5">{title}</p>
+          <h3 className="text-2xl font-black tracking-tighter">{value}</h3>
+          
+          <div className="flex items-center gap-2 mt-2">
+            {trend && (
+              <div className={clsx(
+                "flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[10px] font-black",
+                trend === 'up' ? "bg-emerald-500/10 text-emerald-600" : "bg-destructive/10 text-destructive"
+              )}>
+                {trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                {trendValue}
+              </div>
+            )}
+            <p className="text-[10px] font-bold text-muted-foreground">{sub}</p>
+          </div>
+
+          {extra && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              {extra}
+            </div>
+          )}
+        </div>
+        <div className={`p-3 rounded-2xl ${color} bg-opacity-10 shrink-0 group-hover:scale-110 transition-transform`}>
+          <Icon size={20} className={color.replace('bg-', 'text-')} />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function SystemHealth() {
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
+  const allStock = useStore(state => state.stock || [])
+  const allInventoryHistory = useStore(state => state.inventory_history || [])
+  
+  const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
+  const inventory_history = useMemo(() => allInventoryHistory.filter(h => (h.boutiqueId || 'b1') === activeBoutiqueId), [allInventoryHistory, activeBoutiqueId])
+  
+  const lastInventory = inventory_history[0] ? new Date(inventory_history[0].date).toLocaleDateString() : 'Jamais'
+  
+  return (
+    <div className="card-ultra-compact border border-border/50 bg-card shadow-premium">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+          <Activity size={18} />
+        </div>
+        <h2 className="font-black text-xs uppercase tracking-widest">Santé du Système</h2>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+            <Cloud size={14} className="text-emerald-500" />
+            Synchronisation Cloud
+          </div>
+          <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20">ACTIF</span>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+            <Database size={14} className="text-blue-500" />
+            Stockage Local
+          </div>
+          <span className="text-[10px] font-black uppercase">Optimisé</span>
+        </div>
+        
+        <div className="pt-2 border-t border-border/50">
+           <div className="flex justify-between items-end">
+              <div>
+                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Dernier Inventaire</p>
+                 <p className="text-xs font-black">{lastInventory}</p>
+              </div>
+              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{stock.length} Articles</p>
+           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function Dashboard() {
+  const navigate = useNavigate()
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
+  const all_daily_cash_register = useStore(state => state.daily_cash_register || [])
+  const allSales = useStore(state => state.sales || [])
+  const allExpenses = useStore(state => state.expenses || [])
+  const allStock = useStore(state => state.stock || [])
+  const clients = useStore(state => state.clients) 
+  const config = useStore(state => state.config)
+
+  const daily_cash_register = useMemo(() => all_daily_cash_register.filter(r => (r.boutiqueId || 'b1') === activeBoutiqueId), [all_daily_cash_register, activeBoutiqueId])
+  const sales = useMemo(() => allSales.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSales, activeBoutiqueId])
+  const expenses = useMemo(() => allExpenses.filter(e => (e.boutiqueId || 'b1') === activeBoutiqueId), [allExpenses, activeBoutiqueId])
+  const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
+
+  // -- Calculs Stat --
+  const stats = useMemo(() => {
+    const today = new Date().toLocaleDateString()
+    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString()
+
+    // Somme des ventes POS pour aujourd'hui (Exclure les annulées)
+    const activeSales = sales.filter(s => s.status !== 'cancelled')
+    
+    const posSalesToday = activeSales
+      .filter(s => new Date(s.date).toLocaleDateString() === today)
+      .reduce((sum, s) => sum + (s.totalAmount || 0), 0)
+
+    const posSalesYesterday = activeSales
+      .filter(s => new Date(s.date).toLocaleDateString() === yesterday)
+      .reduce((sum, s) => sum + (s.totalAmount || 0), 0)
+
+    const todayReg = daily_cash_register.find(r => r.date && new Date(r.date).toLocaleDateString() === today)
+    const yesterdayReg = daily_cash_register.find(r => r.date && new Date(r.date).toLocaleDateString() === yesterday)
+
+    // Calcul du montant des annulations pour aujourd'hui dans les dépenses
+    const cancellationsToday = expenses
+      .filter(e => e.category === 'annulation_vente' && new Date(e.date).toLocaleDateString() === today)
+      .reduce((sum, e) => sum + (e.amount || 0), 0)
+
+    // On combine les ventes POS et le CA calculé par la caisse (en déduisant les annulations pour avoir le NET)
+    const todaySales = posSalesToday + Math.max(0, (todayReg?.calculated_sales || 0) - cancellationsToday)
+    const yesterdaySales = posSalesYesterday + (yesterdayReg?.calculated_sales || 0)
+    
+    let salesTrend = 0
+    if (yesterdaySales > 0) {
+      salesTrend = ((todaySales - yesterdaySales) / yesterdaySales) * 100
+    }
+
+    const totalDebt = (clients || []).reduce((acc, c) => acc + (c.total_debt || 0), 0)
+    const criticalStock = stock.filter(s => s.current_stock <= (s.alert_threshold || 10)).length
+
+    return { todaySales, salesTrend, totalDebt, criticalStock, posSalesToday, gapSalesToday: Math.max(0, (todayReg?.calculated_sales || 0) - cancellationsToday) }
+  }, [daily_cash_register, sales, stock, clients, expenses])
+
+  // -- Données Graphique --
+  const chartData = useMemo(() => {
+    // On récupère les 7 derniers jours (y compris aujourd'hui) de manière robuste
+    const days = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date()
+      d.setHours(0, 0, 0, 0)
+      d.setDate(d.getDate() - i)
+      days.push(d)
+    }
+
+    const activeSales = sales.filter(s => s.status !== 'cancelled')
+
+    return days.map(dateObj => {
+      const dayIso = dateObj.toISOString().split('T')[0]
+      
+      const posSales = activeSales
+        .filter(s => {
+          try {
+            return new Date(s.date).toISOString().split('T')[0] === dayIso
+          } catch { return false }
+        })
+        .reduce((sum, s) => sum + (s.totalAmount || 0), 0)
+      
+      const reg = daily_cash_register.find(r => {
+        try {
+          return r.date && new Date(r.date).toISOString().split('T')[0] === dayIso
+        } catch { return false }
+      })
+      const caValue = posSales + (reg?.calculated_sales || 0)
+
+      return {
+        name: dateObj.toLocaleDateString('fr-FR', { weekday: 'short' }),
+        value: caValue,
+        fullDate: dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+      }
+    })
+  }, [daily_cash_register, sales])
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  }
+
+  return (
+    <motion.div 
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-6 max-w-6xl mx-auto pb-10"
+    >
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight uppercase italic flex items-center gap-3">
+             {config?.boutiqueName || 'Butiki'} <span className="text-primary italic opacity-20">Pro Max</span>
+          </h1>
+          <p className="text-muted-foreground mt-1 text-[10px] font-black uppercase tracking-[0.3em]">Tableau de Pilotage Stratégique</p>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-2xl shadow-sm">
+           <Calendar size={14} className="text-primary" />
+           <span className="text-xs font-black uppercase tracking-widest">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+        </div>
+      </div>
+
+      {/* KPI Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          title="Ventes Jour" 
+          value={`${stats.todaySales.toLocaleString()} F`} 
+          sub="CA du jour" 
+          icon={ShoppingCart} 
+          color="bg-primary"
+          trend={stats.salesTrend !== 0 ? (stats.salesTrend > 0 ? 'up' : 'down') : null}
+          trendValue={`${Math.abs(stats.salesTrend).toFixed(1)}%`}
+          delay={0.1}
+          extra={(
+            <div className="space-y-1.5">
+               <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                  <span className="text-muted-foreground">Logguées (POS)</span>
+                  <span className="text-primary">{stats.posSalesToday.toLocaleString()} F</span>
+               </div>
+               <div className="w-full h-1 bg-muted rounded-full overflow-hidden flex">
+                  <div 
+                    className="h-full bg-primary" 
+                    style={{ width: `${(stats.posSalesToday / (stats.todaySales || 1)) * 100}%` }} 
+                  />
+                  <div 
+                    className="h-full bg-orange-500 opacity-50" 
+                    style={{ width: `${(stats.gapSalesToday / (stats.todaySales || 1)) * 100}%` }} 
+                  />
+               </div>
+               <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                  <span className="text-muted-foreground">Estimées (Caisse)</span>
+                  <span className="text-orange-500">{stats.gapSalesToday.toLocaleString()} F</span>
+               </div>
+            </div>
+          )}
+        />
+        <StatCard 
+          title="Stock Critique" 
+          value={stats.criticalStock} 
+          sub="Produits à réappro" 
+          icon={Package} 
+          color="bg-orange-500"
+          delay={0.2}
+        />
+        <StatCard 
+          title="Encours Clients" 
+          value={`${stats.totalDebt.toLocaleString()} F`} 
+          sub="Dettes à recouvrer" 
+          icon={Users} 
+          color="bg-destructive"
+          delay={0.3}
+        />
+        <StatCard 
+          title="Trafic" 
+          value="-- %" 
+          sub="Vs hier" 
+          icon={TrendingUp} 
+          color="bg-emerald-500"
+          delay={0.4}
+        />
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Graphique de performance */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-card border border-border/50 p-6 rounded-3xl shadow-premium relative overflow-hidden group">
+            <div className="flex justify-between items-center mb-8 relative z-10">
+              <div>
+                <h2 className="text-base font-black tracking-tight flex items-center gap-2 uppercase">
+                   <Activity size={18} className="text-primary" /> Courbe de Croissance
+                </h2>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-0.5">Évolution du CA (7 derniers jours)</p>
+              </div>
+              <div className="flex gap-1">
+                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                 <div className="w-2 h-2 rounded-full bg-primary/20" />
+              </div>
+            </div>
+            
+            <div className="h-[300px] w-full relative z-10">
+               <CustomAreaChart data={chartData} />
+            </div>
+            
+            <div className="absolute -left-10 -bottom-10 opacity-[0.02] group-hover:opacity-[0.05] transition-all">
+               <TrendingUp size={240} />
+            </div>
+          </div>
+          
+          <div className="grid sm:grid-cols-2 gap-4">
+             <div className="card-ultra-compact bg-primary/5 border-primary/20 flex items-center justify-between group cursor-pointer hover:bg-primary/10 transition-colors" onClick={() => navigate('/caisse')}>
+                <div>
+                   <p className="text-[9px] font-black text-primary uppercase tracking-widest">Action Rapide</p>
+                   <h4 className="font-black text-sm">Ouvrir la Caisse</h4>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                   <ChevronRight size={16} />
+                </div>
+             </div>
+             <div className="card-ultra-compact bg-orange-500/5 border-orange-500/20 flex items-center justify-between group cursor-pointer hover:bg-orange-500/10 transition-colors" onClick={() => navigate('/procurement')}>
+                <div>
+                   <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest">Optimisation</p>
+                   <h4 className="font-black text-sm">Réappro Assistant</h4>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                   <ChevronRight size={16} />
+                </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Sidebar Widgets */}
+        <div className="space-y-6">
+          <SmartAdvisor />
+          <SystemHealth />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
