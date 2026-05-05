@@ -108,13 +108,13 @@ export default function Ventes() {
 
   // 🚀 P2 — Virtualisation de la grille de produits
   const parentRef = useRef(null)
-  const columns = ui.viewMode === 'grid' ? 2 : 1
+  const columns = ui.viewMode === 'grid' ? 3 : 1
   const rowCount = Math.ceil(filteredProducts.length / columns)
 
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => ui.viewMode === 'grid' ? 140 : 80,
+    estimateSize: () => ui.viewMode === 'grid' ? 125 : 80,
     overscan: 5,
   })
 
@@ -378,19 +378,19 @@ export default function Ventes() {
                         height: `${virtualRow.size}px`,
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
-                      className={clsx("grid gap-4 px-1", ui.viewMode === 'grid' ? "grid-cols-2" : "grid-cols-1")}
+                      className={clsx("grid gap-4 px-1", ui.viewMode === 'grid' ? "grid-cols-3" : "grid-cols-1")}
                     >
                       {rowProducts.map(p => (
                         <div 
                           key={p.id} 
                           onClick={() => addToCart(p)} 
                           className={clsx(
-                            "bg-card border border-border p-4 rounded-[2rem] shadow-sm cursor-pointer hover:border-primary transition-all group relative overflow-hidden", 
-                            ui.viewMode === 'list' ? "flex items-center gap-4 py-3 h-[70px]" : "h-[130px]"
+                            "bg-card border border-border p-2 rounded-[1.5rem] shadow-sm cursor-pointer hover:border-primary transition-all group relative overflow-hidden flex flex-col justify-between", 
+                            ui.viewMode === 'list' ? "flex-row items-center gap-3 py-3 h-[70px]" : "h-[115px]"
                           )}
                         >
-                          <div className={clsx("w-12 h-12 rounded-2xl bg-primary/5 text-primary flex items-center justify-center shrink-0", ui.viewMode === 'list' ? "w-10 h-10" : "mb-3")}>
-                            <Package size={ui.viewMode === 'list' ? 18 : 24} />
+                          <div className={clsx("w-9 h-9 rounded-xl bg-primary/5 text-primary flex items-center justify-center shrink-0", ui.viewMode === 'list' ? "w-8 h-8" : "mb-1")}>
+                            <Package size={ui.viewMode === 'list' ? 16 : 20} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-black uppercase tracking-tight truncate">{p.name}</p>

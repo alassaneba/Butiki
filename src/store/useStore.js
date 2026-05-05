@@ -30,7 +30,13 @@ export const useStore = create(
       ...createFinanceSlice(set, get),
       ...createPeopleSlice(set, get),
       ...createModulesSlice(set, get),
-      ...createHRSlice(set, get)
+      ...createHRSlice(set, get),
+
+      applySenegalSeed: async () => {
+        const { SENEGAL_PRODUCTS, SENEGAL_SUPPLIERS } = await import('./seedData');
+        get().seedStock(SENEGAL_PRODUCTS);
+        get().seedSuppliers(SENEGAL_SUPPLIERS);
+      }
     }),
     {
       name: 'butiki-storage',

@@ -4,6 +4,7 @@ import { useGoogleLogin } from '@react-oauth/google'
 import { uploadToDrive, downloadFromDrive } from '../lib/google-sync'
 import { useStore } from '../store/useStore'
 import { get } from 'idb-keyval'
+import { toast } from 'sonner'
 import { 
   Cloud, CloudOff, RefreshCw, UploadCloud, DownloadCloud, 
   Database, AlertTriangle, FileSpreadsheet, CircleDollarSign, 
@@ -11,7 +12,7 @@ import {
   Upload, MapPin, FileText, Image as ImageIcon, ChevronRight,
   Info, HardDrive, Trash2, Globe, Settings as SettingsIcon,
   Monitor, Croissant, Flame, Tags, Cpu, Fingerprint, Plus, Smartphone, Palette, UserCheck, Bell, Save,
-  Wallet, Package, Users, MessageCircle, Printer
+  Wallet, Package, Users, MessageCircle, Printer, Flag
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -156,6 +157,7 @@ export default function Settings() {
   const updateConfigList = useStore(state => state.updateConfigList)
   const resetConfigLists = useStore(state => state.resetConfigLists)
   const clearAllData = useStore(state => state.clearAllData)
+  const applySenegalSeed = useStore(state => state.applySenegalSeed)
 
   const [activeTab, setActiveTab] = useState('boutique')
   const [ui, setUi] = useState({
@@ -798,6 +800,25 @@ export default function Settings() {
               </div>
 
               <div className="space-y-6">
+                <Card title="Données Démo (Sénégal)" icon={Flag}>
+                   <div className="space-y-3">
+                      <p className="text-[11px] font-bold text-muted-foreground leading-relaxed">
+                        Remplir automatiquement le catalogue avec des produits et fournisseurs locaux (Riz, Huile, GMD, CSS...).
+                      </p>
+                      <button 
+                        onClick={async () => {
+                          if (window.confirm("Ajouter les produits et fournisseurs du Sénégal au système ?")) {
+                            await applySenegalSeed();
+                            toast.success("Données du Sénégal importées !");
+                          }
+                        }}
+                        className="w-full py-4 bg-primary/10 text-primary border border-primary/20 rounded-[24px] font-black text-xs flex items-center justify-center gap-3 hover:bg-primary hover:text-white transition-all active:scale-95 shadow-premium"
+                      >
+                         <Package size={18}/> INITIALISER (SÉNÉGAL)
+                      </button>
+                   </div>
+                </Card>
+
                 <Card title="Maintenance" icon={AlertTriangle}>
                    <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-2">

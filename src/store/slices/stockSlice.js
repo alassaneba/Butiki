@@ -258,5 +258,21 @@ export const createStockSlice = (set, get) => ({
     
     get().logAction(isGeneral ? 'Inventaire Général Terminé' : 'Inventaire Périodique Terminé', `Correction de ${stats.discrepancyValue} F sur ${session.details.length} articles`)
     toast.success(isGeneral ? 'Inventaire général enregistré' : 'Inventaire partiel enregistré')
+  },
+
+  seedStock: (products) => {
+    const boutiqueId = get().activeBoutiqueId;
+    const newItems = products.map(p => ({
+      ...p,
+      id: crypto.randomUUID(),
+      boutiqueId,
+      qty_per_type: 1
+    }));
+
+    set((state) => ({
+      stock: [...state.stock, ...newItems]
+    }));
+    
+    get().logAction('Seed Stock', `${newItems.length} produits ajoutés`);
   }
 });

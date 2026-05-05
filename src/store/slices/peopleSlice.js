@@ -246,5 +246,22 @@ export const createPeopleSlice = (set, get) => ({
       clients: state.clients.filter(c => c.id !== clientId)
     }))
     toast.success('Client supprimé avec succès')
+  },
+
+  seedSuppliers: (suppliers) => {
+    const newSuppliers = suppliers.map(s => ({
+      ...s,
+      id: crypto.randomUUID(),
+      total_debt: 0,
+      transactions: [],
+      rating: 5,
+      createdAt: new Date().toISOString()
+    }));
+
+    set((state) => ({
+      suppliers: [...state.suppliers, ...newSuppliers]
+    }));
+
+    get().logAction('Seed Suppliers', `${newSuppliers.length} fournisseurs ajoutés`);
   }
 });

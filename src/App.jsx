@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Loader2 } from 'lucide-react'
@@ -8,6 +8,7 @@ import InstallPrompt from './components/InstallPrompt'
 import PinLock, { useSessionTimeout } from './components/PinLock'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import CloudSyncManager from './components/CloudSyncManager'
+import { useStore } from './store/useStore'
 
 // Imports fainéants (Lazy Load) pour le code splitting
 import Dashboard from './pages/Dashboard'
@@ -44,6 +45,16 @@ const PageLoader = () => (
 
 function AppInner() {
   const { locked, unlock } = useSessionTimeout()
+  const stock = useStore(state => state.stock)
+  const applySenegalSeed = useStore(state => state.applySenegalSeed)
+
+  // Auto-seed si le stock est vide (pour le confort de l'utilisateur)
+  useEffect(() => {
+    if (stock && stock.length === 0) {
+      applySenegalSeed()
+    }
+  }, [stock, applySenegalSeed])
+
   return (
     <>
       <PinLock locked={locked} onUnlock={unlock} />
