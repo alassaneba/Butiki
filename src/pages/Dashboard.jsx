@@ -17,38 +17,38 @@ function StatCard({ title, value, sub, icon: Icon, color, trend, trendValue, del
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="card-ultra-compact group border border-border/50 bg-card/50 backdrop-blur-sm relative overflow-hidden"
+      className="card-ultra-compact group border border-border/50 bg-card/50 backdrop-blur-sm relative overflow-hidden p-3 sm:p-4"
     >
-      <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
-        <Icon size={70} strokeWidth={3} />
+      <div className="absolute top-0 right-0 p-3 sm:p-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+        <Icon size={40} sm:size={70} strokeWidth={3} />
       </div>
       
       <div className="flex justify-between items-start relative z-10">
         <div className="w-full">
-          <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1.5">{title}</p>
-          <h3 className="text-2xl font-black tracking-tighter">{value}</h3>
+          <p className="text-[9px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">{title}</p>
+          <h3 className="text-lg sm:text-2xl font-black tracking-tighter">{value}</h3>
           
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-1.5 mt-1 sm:mt-2">
             {trend && (
               <div className={clsx(
-                "flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[10px] font-black",
+                "flex items-center gap-0.5 px-1 sm:px-1.5 py-0.5 rounded-md sm:rounded-lg text-[9px] sm:text-[10px] font-black",
                 trend === 'up' ? "bg-emerald-500/10 text-emerald-600" : "bg-destructive/10 text-destructive"
               )}>
-                {trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                {trend === 'up' ? <ArrowUpRight size={8} sm:size={10} /> : <ArrowDownRight size={8} sm:size={10} />}
                 {trendValue}
               </div>
             )}
-            <p className="text-[10px] font-bold text-muted-foreground">{sub}</p>
+            <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground">{sub}</p>
           </div>
 
           {extra && (
-            <div className="mt-3 pt-3 border-t border-border/50">
+            <div className="mt-2 pt-2 border-t border-border/50">
               {extra}
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-2xl ${color} bg-opacity-10 shrink-0 group-hover:scale-110 transition-transform`}>
-          <Icon size={20} className={color.replace('bg-', 'text-')} />
+        <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${color} bg-opacity-10 shrink-0 group-hover:scale-110 transition-transform`}>
+          <Icon size={16} sm:size={20} className={color.replace('bg-', 'text-')} />
         </div>
       </div>
     </motion.div>
@@ -208,24 +208,24 @@ export default function Dashboard() {
       variants={container}
       initial="hidden"
       animate="show"
-      className="space-y-6 max-w-6xl mx-auto pb-10"
+      className="space-y-4 sm:space-y-6 max-w-6xl mx-auto pb-6 sm:pb-10"
     >
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight uppercase italic flex items-center gap-3">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight uppercase italic flex items-center gap-2">
              {config?.boutiqueName || 'Butiki'} <span className="text-primary italic opacity-20">Pro Max</span>
           </h1>
-          <p className="text-muted-foreground mt-1 text-[10px] font-black uppercase tracking-[0.3em]">Tableau de Pilotage Stratégique</p>
+          <p className="text-muted-foreground mt-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]">Tableau de Pilotage Stratégique</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-2xl shadow-sm">
-           <Calendar size={14} className="text-primary" />
-           <span className="text-xs font-black uppercase tracking-widest">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-xl shadow-sm">
+           <Calendar size={12} className="text-primary" />
+           <span className="text-[10px] font-black uppercase tracking-widest">{new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
         </div>
       </div>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard 
           title="Ventes Jour" 
           value={`${stats.todaySales.toLocaleString()} F`} 

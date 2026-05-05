@@ -37,15 +37,15 @@ export default function InstallPrompt() {
     <AnimatePresence>
       {showBanner && (
         <motion.div
-          initial={{ y: 100, opacity: 0 }}
+          initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
+          exit={{ y: -100, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50"
+          className="fixed top-2 left-2 right-2 sm:left-auto sm:right-4 sm:top-4 sm:w-80 z-[100]"
         >
-          <div className="bg-card border border-primary/30 rounded-2xl shadow-2xl p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Download size={20} className="text-primary" />
+          <div className="bg-card/95 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl p-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+              <Download size={18} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm">Installer Butiki</p>

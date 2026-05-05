@@ -119,52 +119,52 @@ export default function Catalogue() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] font-sans text-zinc-900 dark:text-zinc-100">
       {/* Navbar Premium */}
-      <header className="sticky top-0 z-[60] bg-white/70 dark:bg-black/70 backdrop-blur-2xl border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-[60] bg-white/70 dark:bg-black/70 backdrop-blur-2xl border-b border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
           <motion.div 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20"
           >
-            <ShoppingBag size={20} />
+            <ShoppingBag size={18} />
           </motion.div>
           <div>
-            <h1 className="font-black text-lg tracking-tighter uppercase leading-none">{config?.boutiqueName || 'Butiki'}</h1>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Menu Digital
+            <h1 className="font-black text-base sm:text-lg tracking-tighter uppercase leading-none">{config?.boutiqueName || 'Butiki'}</h1>
+            <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Menu Digital
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
            <button 
              onClick={handleShare}
-             className="p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-500 hover:text-primary transition-colors"
+             className="p-2 sm:p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg sm:rounded-xl text-zinc-500 hover:text-primary transition-colors"
            >
-              <Share2 size={18}/>
+              <Share2 size={16}/>
            </button>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto pb-40">
+      <main className="max-w-2xl mx-auto pb-32 sm:pb-40">
         {/* Banner Boutique Immersive */}
-        <div className="p-6">
-           <div className="relative h-56 rounded-[3rem] bg-gradient-to-br from-indigo-600 via-primary to-blue-600 overflow-hidden shadow-2xl group">
+        <div className="p-4 sm:p-6">
+           <div className="relative h-40 sm:h-56 rounded-[2rem] sm:rounded-[3rem] bg-gradient-to-br from-indigo-600 via-primary to-blue-600 overflow-hidden shadow-2xl group">
               <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               
-              <div className="absolute bottom-8 left-8 right-8 text-white">
+              <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-8 right-6 sm:right-8 text-white">
                  <motion.div 
                    initial={{ opacity: 0, x: -20 }}
                    animate={{ opacity: 1, x: 0 }}
-                   className="flex items-center gap-2 mb-3"
+                   className="flex items-center gap-2 mb-2 sm:mb-3"
                  >
-                    <span className="px-3 py-1 bg-emerald-500/90 backdrop-blur-md text-[10px] font-black uppercase rounded-full shadow-lg">Ouvert</span>
-                    <div className="flex gap-1 text-amber-400">
-                      {[1,2,3,4,5].map(i => <Star key={i} size={12} fill="currentColor"/>)}
+                    <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-emerald-500/90 backdrop-blur-md text-[8px] sm:text-[10px] font-black uppercase rounded-full shadow-lg">Ouvert</span>
+                    <div className="flex gap-0.5 sm:gap-1 text-amber-400">
+                      {[1,2,3,4,5].map(i => <Star key={i} size={10} sm:size={12} fill="currentColor"/>)}
                     </div>
                  </motion.div>
-                 <h2 className="text-3xl font-black mb-1 tracking-tight">Prêt à commander ? 👋</h2>
-                 <p className="text-sm font-medium text-white/80">Explorez notre sélection exclusive et recevez vos produits rapidement.</p>
+                 <h2 className="text-xl sm:text-3xl font-black mb-1 tracking-tight">Prêt à commander ? 👋</h2>
+                 <p className="text-[10px] sm:text-sm font-medium text-white/80">Explorez notre sélection exclusive et recevez vos produits rapidement.</p>
               </div>
 
               {/* Decoration */}
@@ -199,22 +199,22 @@ export default function Catalogue() {
         )}
 
         {/* Barre de Recherche & Filtres & View Switcher */}
-        <div className="px-6 mb-8 sticky top-20 z-40 py-2">
-           <div className="flex items-center gap-3">
+        <div className="px-4 sm:px-6 mb-6 sm:mb-8 sticky top-14 sm:top-20 z-40 py-2">
+           <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative group flex-1">
                  <div className="absolute inset-0 bg-primary/20 blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary transition-colors" size={20} />
+                 <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary transition-colors" size={16} sm:size={20} />
                  <input 
-                   type="text" placeholder="Rechercher une pépite..." 
+                   type="text" placeholder="Rechercher..." 
                    value={search} onChange={e => setSearch(e.target.value)}
-                   className="w-full pl-14 pr-6 py-5 bg-white dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] text-sm font-bold shadow-xl shadow-zinc-200/40 dark:shadow-none outline-none focus:ring-4 ring-primary/10 transition-all placeholder:text-zinc-400"
+                   className="w-full pl-11 sm:pl-14 pr-4 sm:pr-6 py-3 sm:py-5 bg-white dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-[2.5rem] text-xs sm:text-sm font-bold shadow-xl shadow-zinc-200/40 dark:shadow-none outline-none focus:ring-4 ring-primary/10 transition-all placeholder:text-zinc-400"
                  />
               </div>
               <button 
                 onClick={() => setViewMode(v => v === 'list' ? 'grid' : 'list')}
-                className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-500 shadow-lg"
+                className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-500 shadow-lg"
               >
-                 {viewMode === 'list' ? <Filter size={20} /> : <Tag size={20} />}
+                 {viewMode === 'list' ? <Filter size={18} sm:size={20} /> : <Tag size={18} sm:size={20} />}
               </button>
            </div>
         </div>
@@ -241,8 +241,8 @@ export default function Catalogue() {
 
         {/* Grille de Produits Premium */}
         <div className={clsx(
-           "px-6",
-           viewMode === 'grid' ? "grid grid-cols-2 gap-4" : "space-y-5"
+           "px-4 sm:px-6",
+           viewMode === 'grid' ? "grid grid-cols-2 gap-3 sm:gap-4" : "space-y-3 sm:space-y-5"
         )}>
            <AnimatePresence mode="popLayout">
             {filteredItems.length > 0 ? (
@@ -260,8 +260,8 @@ export default function Catalogue() {
                     className={clsx(
                       "group relative bg-white dark:bg-zinc-900 border transition-all duration-300 cursor-pointer",
                       viewMode === 'grid' 
-                        ? "flex flex-col p-4 rounded-[2rem] gap-3" 
-                        : "flex items-center p-5 rounded-[2.5rem] gap-5",
+                        ? "flex flex-col p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2rem] gap-2 sm:gap-3" 
+                        : "flex items-center p-3 sm:p-5 rounded-[1.5rem] sm:rounded-[2.5rem] gap-3 sm:gap-5",
                       qtyInCart > 0 
                         ? "border-primary shadow-2xl shadow-primary/10 ring-4 ring-primary/5" 
                         : "border-zinc-100 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-sm"

@@ -19,7 +19,7 @@ const navItems = [
   { path: '/stock', label: 'Stock Total', icon: Package },
   { path: '/inventaire', label: 'Inventaire Péri.', icon: ClipboardCheck },
   { path: '/procurement', label: 'Assistant Réappro', icon: ShoppingCart, badge: 'AUTO' },
-  { path: '/previsions', label: 'Analyses & Prévisions', icon: TrendingUp },
+  { path: '/stats', label: 'Analyses & Prévisions', icon: TrendingUp },
   { path: '/achat', label: 'Achats Fournisseurs', icon: ShoppingBag },
   
   { section: 'Modules Spécialisés' },
@@ -83,7 +83,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
       '/fournisseurs': 'fournisseurs',
       '/stock': 'stock',
       '/inventaire': 'stock',
-      '/previsions': 'previsions',
+      '/stats': 'previsions',
       '/charges': 'charges',
       '/depot': 'depot',
       '/pain': 'pain',

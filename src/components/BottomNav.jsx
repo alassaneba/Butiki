@@ -17,7 +17,7 @@ export default function BottomNav() {
     { path: '/caisse', label: 'Caisse', icon: Wallet, moduleId: 'caisse' },
     { path: '/credit', label: 'Crédit', icon: Smartphone, moduleId: 'credit' },
     { path: '/clients', label: 'Clients', icon: Users, moduleId: 'clients' },
-    { path: '/previsions', label: 'Stats', icon: TrendingUp, moduleId: 'previsions' },
+    { path: '/stats', label: 'Stats', icon: TrendingUp, moduleId: 'previsions' },
     { path: '/settings', label: 'Réglages', icon: Settings, moduleId: 'settings' },
   ]
 
