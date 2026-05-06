@@ -166,6 +166,14 @@ export default function Clients() {
     return Math.max(0, Number(form.cashReceived) - amount)
   }, [form.cashReceived, form.paymentAmount, form.newDebtAmount, ui.activeClient])
 
+  const handleCycleTag = (client) => {
+    const currentIndex = TAGS.findIndex(t => t.value === client.tag)
+    const nextIndex = (currentIndex + 1) % TAGS.length
+    const nextTag = TAGS[nextIndex].value
+    updateClient(client.id, { tag: nextTag })
+    toast.success(`Tag mis à jour : ${TAGS[nextIndex].label}`)
+  }
+
   // 🚀 P1 — Index Map O(n) : pré-calculer le CA par client UNE seule fois
   // Evite le filter+reduce O(n*m) à l'intérieur de filteredClients
   const revenueByClient = useMemo(() => {
@@ -312,7 +320,13 @@ export default function Clients() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <h4 className="font-black text-sm tracking-tight truncate uppercase leading-none">{client.name}</h4>
-                        <TagBadge tag={client.tag} />
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleCycleTag(client); }} 
+                          className="hover:scale-105 active:scale-95 transition-all outline-none"
+                          title="Changer le segment"
+                        >
+                          <TagBadge tag={client.tag} />
+                        </button>
                         {client.loyalty_points > 0 && (
                           <div className="bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-md text-[8px] font-black flex items-center gap-1 uppercase">
                              <Star size={8} fill="currentColor" /> {client.loyalty_points}
@@ -324,7 +338,27 @@ export default function Clients() {
                           </div>
                         )}
                       </div>
-                      {client.phone && <p className="text-[9px] font-bold text-muted-foreground mt-0.5">{client.phone}</p>}
+                      {client.phone && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <a 
+                            href={`tel:${client.phone.replace(/\s/g, '')}`} 
+                            className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 group"
+                            title="Appeler le client"
+                          >
+                            <Phone size={10} className="group-hover:scale-110 transition-transform" /> 
+                            <span>{client.phone}</span>
+                          </a>
+                          <a 
+                            href={`https://wa.me/${client.phone.replace(/\D/g, '')}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-emerald-500 hover:scale-125 transition-transform p-0.5"
+                            title="Contacter par WhatsApp"
+                          >
+                            <MessageCircle size={12} fill="currentColor" className="opacity-20 group-hover:opacity-100" />
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">

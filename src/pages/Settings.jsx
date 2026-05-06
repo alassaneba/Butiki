@@ -12,7 +12,7 @@ import {
   Upload, MapPin, FileText, Image as ImageIcon, ChevronRight,
   Info, HardDrive, Trash2, Globe, Settings as SettingsIcon,
   Monitor, Croissant, Flame, Tags, Cpu, Fingerprint, Plus, Smartphone, Palette, UserCheck, Bell, Save,
-  Wallet, Package, Users, MessageCircle, Printer, Flag
+  Wallet, Package, Users, MessageCircle, Printer, Flag, ShoppingBag, ExternalLink
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { motion, AnimatePresence } from 'framer-motion'
