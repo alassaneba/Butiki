@@ -226,6 +226,9 @@ export const createCoreSlice = (set, get) => ({
       }, ...state.audit_log].slice(0, 500)
     }
   }),
+  clearAuditLogs: () => {
+    set({ audit_log: [] })
+  },
 
   // Cloud Backup state
   cloudToken: null,

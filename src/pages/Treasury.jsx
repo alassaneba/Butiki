@@ -50,15 +50,23 @@ export default function Treasury() {
 
   const monthlyRevenue = currentMonthSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0)
   
-  // COGS : Coût d'achat réel des produits vendus
-  const monthlyCOGS = currentMonthSales.reduce((acc, s) => {
-    const saleCost = (s.items || []).reduce((iAcc, item) => {
-      const product = stockList.find(p => p.id === item.productId)
-      const unitCost = product ? (Number(product.price_buy) || 0) : 0
-      return iAcc + (item.quantity * unitCost)
+  // Création d'un dictionnaire de produits pour accélération O(1) au lieu de O(N) dans les boucles
+  const productMap = useMemo(() => {
+    const map = {}
+    stockList.forEach(p => { map[p.id] = Number(p.price_buy) || 0 })
+    return map
+  }, [stockList])
+
+  // COGS : Coût d'achat réel des produits vendus (optimisé avec productMap)
+  const monthlyCOGS = useMemo(() => {
+    return currentMonthSales.reduce((acc, s) => {
+      const saleCost = (s.items || []).reduce((iAcc, item) => {
+        const unitCost = productMap[item.productId] || 0
+        return iAcc + (item.quantity * unitCost)
+      }, 0)
+      return acc + saleCost
     }, 0)
-    return acc + saleCost
-  }, 0)
+  }, [currentMonthSales, productMap])
 
   const monthlyExpenses = expenseList.filter(e => {
     const d = new Date(e.date)

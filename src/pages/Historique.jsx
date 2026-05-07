@@ -27,6 +27,7 @@ const formatTime = (iso) => {
 export default function Historique() {
   const daily_cash_register = useStore(state => state.daily_cash_register)
   const expenses = useStore(state => state.expenses)
+  const inflows = useStore(state => state.inflows || [])
   const bread_logs = useStore(state => state.bread_logs)
   const gas_logs = useStore(state => state.gas_logs)
   const credit_logs = useStore(state => state.credit_logs || [])
@@ -44,6 +45,8 @@ export default function Historique() {
   const [closingRegister, setClosingRegister] = useState(null)
   const [selectedDetailRegister, setSelectedDetailRegister] = useState(null)
   const [closingAmount, setClosingAmount] = useState('')
+  const [closingWave, setClosingWave] = useState('')
+  const [closingOrange, setClosingOrange] = useState('')
   const [managerName, setManagerName] = useState(activeUser?.name || '')
 
   useEffect(() => {
@@ -131,12 +134,22 @@ export default function Historique() {
     const regDate = closingRegister.date ? new Date(closingRegister.date).toLocaleDateString() : ''
     const dayExpenses = expenses.filter(exp => exp.date && new Date(exp.date).toLocaleDateString() === regDate)
     const expensesTotal = dayExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
+    
+    const dayInflows = inflows.filter(inf => inf.date && new Date(inf.date).toLocaleDateString() === regDate)
+    const inflowsTotal = dayInflows.reduce((sum, inf) => sum + (Number(inf.amount) || 0), 0)
 
-    closeCashRegister(closingRegister.id, { cash: Number(closingAmount) }, expensesTotal, 0, managerName)
-    logAction('Clôture Caisse (Historique)', `Caisse du ${regDate} clôturée par ${managerName} avec ${closingAmount} F (Dépenses: ${expensesTotal} F)`)
+    closeCashRegister(closingRegister.id, { 
+      cash: Number(closingAmount),
+      wave: Number(closingWave),
+      orange: Number(closingOrange)
+    }, expensesTotal, inflowsTotal, managerName)
+    
+    logAction('Clôture Caisse (Historique)', `Caisse du ${regDate} clôturée par ${managerName} avec ${closingAmount} F (Dépenses: ${expensesTotal} F, Fintech: W:${closingWave}/O:${closingOrange})`)
     
     setClosingRegister(null)
     setClosingAmount('')
+    setClosingWave('')
+    setClosingOrange('')
   }
 
   return (
@@ -563,6 +576,31 @@ export default function Historique() {
                   <p className="text-[9px] text-primary font-bold text-center uppercase tracking-widest">
                     Ventes nettes calculées automatiquement.
                   </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-blue-500 ml-1">Solde réel WAVE</label>
+                  <input 
+                    type="number" 
+                    value={closingWave}
+                    onChange={(e) => setClosingWave(e.target.value)}
+                    className="w-full p-3 border border-blue-500/30 rounded-xl bg-blue-500/5 text-lg font-black focus:border-blue-500 outline-none transition-all"
+                    placeholder="Solde Wave"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-orange-500 ml-1">Solde réel ORANGE MONEY</label>
+                  <input 
+                    type="number" 
+                    value={closingOrange}
+                    onChange={(e) => setClosingOrange(e.target.value)}
+                    className="w-full p-3 border border-orange-500/30 rounded-xl bg-orange-500/5 text-lg font-black focus:border-orange-500 outline-none transition-all"
+                    placeholder="Solde Orange Money"
+                    required
+                  />
                 </div>
               </div>
 

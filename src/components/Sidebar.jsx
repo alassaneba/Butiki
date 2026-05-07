@@ -127,45 +127,45 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
       )}
 
       <aside className={clsx(
-        "fixed top-0 left-0 z-50 h-screen w-60 bg-card border-r border-border flex flex-col transition-transform lg:translate-x-0 lg:static",
+        "fixed top-0 left-0 z-50 h-screen w-48 bg-card border-r border-border flex flex-col transition-all lg:translate-x-0 lg:static",
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex h-12 items-center justify-between px-4 border-b border-border shrink-0">
+        <div className="flex h-16 items-center justify-between px-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
-            {config?.logo ? (
-              <img src={config.logo} alt="Logo" className="w-7 h-7 rounded-lg object-cover border border-border" />
+            {config?.logo || '/logo.png' ? (
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-1 shadow-sm overflow-hidden shrink-0">
+                <img 
+                  src={config?.logo || '/logo.png'} 
+                  alt="Logo" 
+                  className="w-full h-full object-contain mix-blend-multiply scale-110" 
+                />
+              </div>
             ) : (
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Wallet size={14} className="text-primary" />
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner shrink-0">
+                <Wallet size={16} className="text-primary" />
               </div>
             )}
             <div className="flex flex-col min-w-0 group relative cursor-pointer">
-              <span className="text-[10px] font-black text-primary/60 uppercase tracking-tighter leading-none">Boutique</span>
+              <span className="text-[8px] font-black text-primary uppercase tracking-widest leading-none mb-0.5">Butiki</span>
               <select 
                 value={activeBoutiqueId} 
                 onChange={(e) => useStore.getState().switchBoutique(e.target.value)}
-                className="text-sm font-black text-foreground truncate uppercase italic bg-transparent border-none outline-none appearance-none cursor-pointer pr-4"
+                className="text-xs font-black text-foreground truncate uppercase italic bg-transparent border-none outline-none appearance-none cursor-pointer pr-3"
               >
                 {(boutiques || []).map(b => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
-              <div className="absolute right-0 bottom-1 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity">
-                <ChevronRight size={10} className="rotate-90" />
-              </div>
             </div>
           </div>
-          <button className="lg:hidden text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>
-            <X size={18} />
-          </button>
         </div>
 
-        <nav className="p-2 space-y-0.5 flex-1 overflow-y-auto scrollbar-hide">
+        <nav className="p-1.5 space-y-0.5 flex-1 overflow-y-auto scrollbar-hide">
           {filteredNavItems.map((item, idx) => {
             if (item.section) {
               return (
-                <div key={`section-${idx}`} className="px-3 pt-4 pb-1">
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">{item.section}</p>
+                <div key={`section-${idx}`} className="px-2.5 pt-3 pb-1">
+                  <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">{item.section}</p>
                 </div>
               )
             }
@@ -177,7 +177,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
                 className={clsx(
-                  "flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-medium transition-all duration-300 text-sm group relative overflow-hidden",
+                  "flex items-center gap-2 px-2.5 py-1.5 rounded-xl font-medium transition-all duration-300 text-xs group relative overflow-hidden",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground hover:translate-x-1"

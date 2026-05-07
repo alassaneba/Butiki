@@ -11,35 +11,45 @@ import CloudSyncManager from './components/CloudSyncManager'
 import { useStore } from './store/useStore'
 
 // Imports fainéants (Lazy Load) pour le code splitting
-import Dashboard from './pages/Dashboard'
-import Caisse from './pages/Caisse'
-import Achat from './pages/Achat'
-import Clients from './pages/Clients'
-import Fournisseurs from './pages/Fournisseurs'
-import Settings from './pages/Settings'
-import Stock from './pages/Stock'
-import Historique from './pages/Historique'
-import Inventaire from './pages/Inventaire'
-import PrevisionsPage from './pages/PrevisionsPage'
-import UsersPage from './pages/UsersPage'
-import ChargesFixes from './pages/ChargesFixes'
-import Depot from './pages/Depot'
-import Pain from './pages/Pain'
-import Gaz from './pages/Gaz'
-import CreditTelephonique from './pages/CreditTelephonique'
-import Ventes from './pages/Ventes'
-import Treasury from './pages/Treasury'
-import Procurement from './pages/Procurement'
-import AuditTrail from './pages/AuditTrail'
-import Boutiques from './pages/Boutiques'
-import RH from './pages/RH'
-import Logistics from './pages/Logistics'
-import Catalogue from './pages/Catalogue'
+// Imports fainéants (Lazy Load) pour le code splitting - OPTIMISÉ PRO MAX
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Caisse = lazy(() => import('./pages/Caisse'))
+const Achat = lazy(() => import('./pages/Achat'))
+const Clients = lazy(() => import('./pages/Clients'))
+const Fournisseurs = lazy(() => import('./pages/Fournisseurs'))
+const Settings = lazy(() => import('./pages/Settings'))
+const Stock = lazy(() => import('./pages/Stock'))
+const Historique = lazy(() => import('./pages/Historique'))
+const Inventaire = lazy(() => import('./pages/Inventaire'))
+const PrevisionsPage = lazy(() => import('./pages/PrevisionsPage'))
+const UsersPage = lazy(() => import('./pages/UsersPage'))
+const ChargesFixes = lazy(() => import('./pages/ChargesFixes'))
+const Depot = lazy(() => import('./pages/Depot'))
+const Pain = lazy(() => import('./pages/Pain'))
+const Gaz = lazy(() => import('./pages/Gaz'))
+const CreditTelephonique = lazy(() => import('./pages/CreditTelephonique'))
+const Ventes = lazy(() => import('./pages/Ventes'))
+const Treasury = lazy(() => import('./pages/Treasury'))
+const Procurement = lazy(() => import('./pages/Procurement'))
+const AuditTrail = lazy(() => import('./pages/AuditTrail'))
+const Boutiques = lazy(() => import('./pages/Boutiques'))
+const RH = lazy(() => import('./pages/RH'))
+const Logistics = lazy(() => import('./pages/Logistics'))
+const Catalogue = lazy(() => import('./pages/Catalogue'))
 
-// Écran de chargement (utilisé uniquement pour le Suspense global si nécessaire)
+// Écran de chargement Premium (PRO MAX)
 const PageLoader = () => (
-  <div className="flex w-full h-[50vh] items-center justify-center">
-    <Loader2 className="animate-spin text-primary" size={32} />
+  <div className="flex flex-col w-full h-[60vh] items-center justify-center gap-6 animate-in fade-in duration-700">
+    <div className="relative">
+      <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 bg-primary/10 rounded-full animate-pulse" />
+      </div>
+    </div>
+    <div className="space-y-2 text-center">
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 animate-pulse">Butiki Pro Max</p>
+      <p className="text-xs font-bold text-muted-foreground/60 italic">Intelligence de gestion en cours...</p>
+    </div>
   </div>
 )
 

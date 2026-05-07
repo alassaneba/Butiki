@@ -105,6 +105,38 @@ function SystemHealth() {
   )
 }
 
+function ModuleSyncStatus() {
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
+  const breadLogs = useStore(state => state.bread_logs || [])
+  const gasLogs = useStore(state => state.gas_logs || [])
+  const creditLogs = useStore(state => state.credit_logs || [])
+  
+  const today = new Date().toLocaleDateString()
+  
+  const modules = [
+    { id: 'pain', label: 'Pain', active: breadLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
+    { id: 'gaz', label: 'Gaz', active: gasLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
+    { id: 'credit', label: 'Crédit', active: creditLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
+  ]
+
+  return (
+    <div className="card-ultra-compact border border-border/50 bg-card/30 backdrop-blur-md">
+      <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-3">Activité des Modules</h3>
+      <div className="grid grid-cols-3 gap-2">
+        {modules.map(m => (
+          <div key={m.id} className="flex flex-col items-center gap-1">
+            <div className={clsx(
+              "w-2 h-2 rounded-full",
+              m.active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-muted-foreground/20"
+            )} />
+            <span className="text-[8px] font-black uppercase tracking-tighter">{m.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
@@ -144,9 +176,16 @@ export default function Dashboard() {
       .filter(e => e.category === 'annulation_vente' && new Date(e.date).toLocaleDateString() === today)
       .reduce((sum, e) => sum + (e.amount || 0), 0)
 
-    // On combine les ventes POS et le CA calculé par la caisse (en déduisant les annulations pour avoir le NET)
-    const todaySales = posSalesToday + Math.max(0, (todayReg?.calculated_sales || 0) - cancellationsToday)
-    const yesterdaySales = posSalesYesterday + (yesterdayReg?.calculated_sales || 0)
+    // CA Loggué = Toutes les ventes POS
+    const loggedSales = posSalesToday
+    
+    // CA Manuel (Caisse) = Écart positif ou ventes déclarées manuellement
+    // Si calculated_sales est positif, c'est du CA additionnel (ventes hors POS)
+    // Si c'est négatif, c'est un manquant de caisse
+    const manualSales = todayReg?.calculated_sales || 0
+    
+    const todaySales = loggedSales + Math.max(0, manualSales)
+    const yesterdaySales = posSalesYesterday + Math.max(0, yesterdayReg?.calculated_sales || 0)
     
     let salesTrend = 0
     if (yesterdaySales > 0) {
@@ -156,7 +195,15 @@ export default function Dashboard() {
     const totalDebt = (clients || []).reduce((acc, c) => acc + (c.total_debt || 0), 0)
     const criticalStock = stock.filter(s => s.current_stock <= (s.alert_threshold || 10)).length
 
-    return { todaySales, salesTrend, totalDebt, criticalStock, posSalesToday, gapSalesToday: Math.max(0, (todayReg?.calculated_sales || 0) - cancellationsToday) }
+    return { 
+      todaySales, 
+      salesTrend, 
+      totalDebt, 
+      criticalStock, 
+      loggedSales, 
+      manualSales,
+      hasDiscrepancy: manualSales < 0 
+    }
   }, [daily_cash_register, sales, stock, clients, expenses])
 
   // -- Données Graphique --
@@ -239,21 +286,23 @@ export default function Dashboard() {
             <div className="space-y-1.5">
                <div className="flex justify-between items-center text-[9px] font-black uppercase">
                   <span className="text-muted-foreground">Logguées (POS)</span>
-                  <span className="text-primary">{stats.posSalesToday.toLocaleString()} F</span>
+                  <span className="text-primary">{stats.loggedSales.toLocaleString()} F</span>
                </div>
                <div className="w-full h-1 bg-muted rounded-full overflow-hidden flex">
                   <div 
                     className="h-full bg-primary" 
-                    style={{ width: `${(stats.posSalesToday / (stats.todaySales || 1)) * 100}%` }} 
+                    style={{ width: `${(stats.loggedSales / (stats.todaySales || 1)) * 100}%` }} 
                   />
                   <div 
-                    className="h-full bg-orange-500 opacity-50" 
-                    style={{ width: `${(stats.gapSalesToday / (stats.todaySales || 1)) * 100}%` }} 
+                    className={clsx("h-full opacity-50", stats.manualSales >= 0 ? "bg-orange-500" : "bg-destructive")} 
+                    style={{ width: `${(Math.abs(stats.manualSales) / (stats.todaySales || 1)) * 100}%` }} 
                   />
                </div>
                <div className="flex justify-between items-center text-[9px] font-black uppercase">
-                  <span className="text-muted-foreground">Estimées (Caisse)</span>
-                  <span className="text-orange-500">{stats.gapSalesToday.toLocaleString()} F</span>
+                  <span className="text-muted-foreground">{stats.manualSales >= 0 ? 'Hors POS / Surplus' : 'Manquant Caisse'}</span>
+                  <span className={stats.manualSales >= 0 ? 'text-orange-500' : 'text-destructive'}>
+                    {Math.abs(stats.manualSales).toLocaleString()} F
+                  </span>
                </div>
             </div>
           )}
@@ -335,6 +384,7 @@ export default function Dashboard() {
 
         {/* Sidebar Widgets */}
         <div className="space-y-6">
+          <ModuleSyncStatus />
           <SmartAdvisor />
           <SystemHealth />
         </div>

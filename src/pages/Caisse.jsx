@@ -9,6 +9,7 @@ import { printReceipt, formatClosingReceipt } from '../lib/bluetooth'
 import { printDailyReport } from '../lib/print-report'
 import { useVoiceInput } from '../lib/useVoiceInput'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
+import clsx from 'clsx'
 import FintechModule from '../components/FintechModule'
 import {
   ResponsiveDialog,
@@ -56,6 +57,24 @@ export default function Caisse() {
   const [transfer, setTransfer] = useState({ amount: '', provider: 'wave' })
   const [isPrinting, setIsPrinting] = useState(false)
 
+  const todayExpenses = expenses.filter(
+    (exp) => new Date(exp.date).toLocaleDateString() === todayDateString && (exp.boutiqueId || 'b1') === activeBoutiqueId
+  )
+  const totalExpenses = todayExpenses.reduce((acc, val) => acc + Number(val.amount), 0)
+
+  const todayInflows = (inflows || []).filter(
+    (inf) => new Date(inf.date).toLocaleDateString() === todayDateString && (inf.boutiqueId || 'b1') === activeBoutiqueId
+  )
+  const totalInflows = todayInflows.reduce((acc, val) => acc + Number(val.amount), 0)
+
+  // 🚀 Calcul des soldes attendus (Réconciliation)
+  const expectedCash = React.useMemo(() => {
+    if (!todayRegister) return 0
+    const cashInflows = todayInflows.filter(i => i.paymentMethod === 'cash').reduce((acc, val) => acc + Number(val.amount || 0), 0)
+    const cashExpenses = todayExpenses.filter(e => e.paymentMethod === 'cash').reduce((acc, val) => acc + Number(val.amount || 0), 0)
+    return (todayRegister.opening_balance || 0) + cashInflows - cashExpenses
+  }, [todayRegister, todayInflows, todayExpenses])
+
   // Helpers pour mise à jour partielle
   const setOpeningField = useCallback((field, value) => setOpening(p => ({ ...p, [field]: value })), [])
   const setClosingField = useCallback((field, value) => setClosing(p => ({ ...p, [field]: value })), [])
@@ -80,39 +99,38 @@ export default function Caisse() {
     onResult: (text) => setExpenseField('desc', text)
   })
 
-  const todayExpenses = expenses.filter(
-    (exp) => new Date(exp.date).toLocaleDateString() === todayDateString && (exp.boutiqueId || 'b1') === activeBoutiqueId
-  )
-  const totalExpenses = todayExpenses.reduce((acc, val) => acc + Number(val.amount), 0)
-
-  const todayInflows = (inflows || []).filter(
-    (inf) => new Date(inf.date).toLocaleDateString() === todayDateString && (inf.boutiqueId || 'b1') === activeBoutiqueId
-  )
-  const totalInflows = todayInflows.reduce((acc, val) => acc + Number(val.amount), 0)
-
   const handleOpen = useCallback((e) => {
     e.preventDefault()
     if (!opening.amount) return
-    openCashRegister({ 
+    
+    // Dynamically collect fintech openings
+    const openData = {
       opening_balance: Number(opening.amount),
-      opening_wave: Number(opening.wave),
-      opening_orange: Number(opening.orange),
       manager_name: opening.manager
+    }
+    fintech_providers.forEach(p => {
+      openData[`opening_${p.value}`] = Number(opening[p.value] || 0)
     })
+
+    openCashRegister(openData)
     setOpening({ amount: '', wave: '', orange: '', manager: activeUser?.name || '' })
-  }, [opening, openCashRegister, activeUser])
+  }, [opening, openCashRegister, fintech_providers, activeUser])
 
   const handleClose = useCallback((e) => {
     e.preventDefault()
     if (!todayRegister) return
-    closeCashRegister(todayRegister.id, {
-      cash: Number(closing.amount),
-      wave: Number(closing.wave),
-      orange: Number(closing.orange)
-    }, totalExpenses, totalInflows, closing.manager)
+
+    const closeData = {
+      cash: Number(closing.amount)
+    }
+    fintech_providers.forEach(p => {
+      closeData[p.value] = Number(closing[p.value] || 0)
+    })
+
+    closeCashRegister(todayRegister.id, closeData, totalExpenses, totalInflows, closing.manager)
     closeDialog('close')
     setClosing({ amount: '', wave: '', orange: '', manager: activeUser?.name || '' })
-  }, [closing, todayRegister, closeCashRegister, totalExpenses, totalInflows, closeDialog, activeUser])
+  }, [closing, todayRegister, closeCashRegister, totalExpenses, totalInflows, closeDialog, fintech_providers, activeUser])
 
   const handleAddExpense = useCallback((e) => {
     e.preventDefault()
@@ -248,28 +266,20 @@ export default function Caisse() {
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 ml-1">Fond Wave</label>
-                  <input 
-                    type="number" 
-                     value={opening.wave}
-                    onChange={(e) => setOpeningField('wave', e.target.value)}
-                    className="w-full p-3 border-2 border-border/50 rounded-xl bg-background font-black focus:border-blue-500 outline-none transition-all"
-                    placeholder="0"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-orange-500 ml-1">Fond Orange Money</label>
-                  <input 
-                    type="number" 
-                     value={opening.orange}
-                    onChange={(e) => setOpeningField('orange', e.target.value)}
-                    className="w-full p-3 border-2 border-border/50 rounded-xl bg-background font-black focus:border-orange-500 outline-none transition-all"
-                    placeholder="0"
-                    required
-                  />
-                </div>
+                {fintech_providers.map(provider => (
+                  <div key={provider.value} className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: provider.color || 'hsl(var(--primary))' }}>Fond {provider.name}</label>
+                    <input 
+                      type="number" 
+                      value={opening[provider.value] || ''}
+                      onChange={(e) => setOpeningField(provider.value, e.target.value)}
+                      className="w-full p-3 border-2 border-border/50 rounded-xl bg-background font-black outline-none transition-all"
+                      style={{ borderColor: `${provider.color}22` }}
+                      placeholder="0"
+                      required
+                    />
+                  </div>
+                ))}
               </div>
               <button type="submit" className="w-full bg-primary text-white py-3.5 rounded-xl font-black text-sm uppercase hover:opacity-90 shadow-md active:scale-95 transition-all flex items-center justify-center gap-2">
                 Ouvrir la Caisse <ArrowRight size={18} />
@@ -491,22 +501,36 @@ export default function Caisse() {
           <form onSubmit={handleClose} className="space-y-4 mt-2">
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Espèces comptées (Arrêt)</label>
+                <label className="text-[10px] font-black uppercase text-muted-foreground ml-1 flex justify-between">
+                  <span>Espèces en Caisse (Réel)</span>
+                  <span className="text-primary opacity-60">Attendu: {expectedCash.toLocaleString()} F</span>
+                </label>
                 <input 
                   type="number" 
-                   value={closing.amount}
+                  value={closing.amount}
                   onChange={(e) => setClosingField('amount', e.target.value)}
-                  className="w-full p-4 border-2 border-border/50 rounded-xl bg-background text-2xl font-black focus:border-primary outline-none transition-all placeholder:text-muted/30"
+                  className={clsx(
+                    "w-full p-4 border-2 rounded-xl text-2xl font-black outline-none transition-all",
+                    Number(closing.amount) === expectedCash ? "border-emerald-500/30 bg-emerald-500/5 focus:border-emerald-500" : "border-border/50 bg-background focus:border-primary"
+                  )}
                   placeholder="0"
                   required
                 />
+                {closing.amount && Number(closing.amount) !== expectedCash && (
+                  <p className={clsx(
+                    "text-[9px] font-black uppercase px-2 py-1 rounded-lg mt-1 inline-block",
+                    Number(closing.amount) > expectedCash ? "bg-emerald-500/10 text-emerald-600" : "bg-destructive/10 text-destructive"
+                  )}>
+                    Écart : {(Number(closing.amount) - expectedCash).toLocaleString()} F {Number(closing.amount) > expectedCash ? '(Surplus)' : '(Manquant)'}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Responsable de Clôture</label>
                 <input 
                   type="text" 
-                   value={closing.manager}
+                  value={closing.manager}
                   onChange={(e) => setClosingField('manager', e.target.value)}
                   className="w-full p-3 border-2 border-border/50 rounded-xl bg-background text-sm font-bold focus:border-primary outline-none transition-all"
                   placeholder="Nom du responsable"
@@ -515,28 +539,23 @@ export default function Caisse() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-blue-500 ml-1">Solde réel WAVE</label>
-                  <input 
-                    type="number" 
-                     value={closing.wave}
-                    onChange={(e) => setClosingField('wave', e.target.value)}
-                    className="w-full p-3 border border-blue-500/30 rounded-xl bg-blue-500/5 text-lg font-black focus:border-blue-500 outline-none transition-all"
-                    placeholder="Solde Wave"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-orange-500 ml-1">Solde réel ORANGE MONEY</label>
-                  <input 
-                    type="number" 
-                     value={closing.orange}
-                    onChange={(e) => setClosingField('orange', e.target.value)}
-                    className="w-full p-3 border border-orange-500/30 rounded-xl bg-orange-500/5 text-lg font-black focus:border-orange-500 outline-none transition-all"
-                    placeholder="Solde Orange Money"
-                    required
-                  />
-                </div>
+                {fintech_providers.map(provider => (
+                  <div key={provider.value} className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase ml-1 flex justify-between gap-2" style={{ color: provider.color || 'hsl(var(--primary))' }}>
+                      <span className="truncate">{provider.name}</span>
+                      <span className="opacity-50 shrink-0">Exp: {(fintech_balances[provider.value] || 0).toLocaleString()}</span>
+                    </label>
+                    <input 
+                      type="number" 
+                      value={closing[provider.value] || ''}
+                      onChange={(e) => setClosingField(provider.value, e.target.value)}
+                      className="w-full p-3 border rounded-xl bg-muted/5 text-lg font-black outline-none transition-all"
+                      style={{ borderColor: `${provider.color}33`, color: provider.color }}
+                      placeholder="Solde Réel"
+                      required
+                    />
+                  </div>
+                ))}
               </div>
             </div>
             

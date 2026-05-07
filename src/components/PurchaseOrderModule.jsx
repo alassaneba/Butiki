@@ -27,6 +27,8 @@ export default function PurchaseOrderModule() {
   const createPurchaseOrder = useStore(state => state.createPurchaseOrder)
   const updatePurchaseOrderStatus = useStore(state => state.updatePurchaseOrderStatus)
   const deletePurchaseOrder = useStore(state => state.deletePurchaseOrder)
+  const procurement_cart = useStore(state => state.procurement_cart || [])
+  const clearProcurementCart = useStore(state => state.clearProcurementCart)
   const [isCreating, setIsCreating] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [items, setItems] = useState([])
@@ -129,12 +131,51 @@ export default function PurchaseOrderModule() {
     setItems([...items, ...newItems])
   }
 
+  const handleImportFromCart = () => {
+    if (procurement_cart.length === 0) return
+
+    const existingIds = new Set(items.map(it => it.stockId))
+    const toAdd = procurement_cart.filter(s => !existingIds.has(s.id))
+
+    if (toAdd.length === 0) {
+      alert("Tous les articles du panier sont déjà dans la commande.")
+      return
+    }
+
+    const newItems = toAdd.map(s => {
+      const qtyPerType = s.qty_per_type || 1;
+      const suggestedUnits = s.suggestion || 0;
+      // On calcule le nombre de types (ex: cartons) nécessaires pour atteindre la suggestion
+      const numTypes = suggestedUnits > 0 ? Math.ceil(suggestedUnits / qtyPerType) : 1;
+      
+      return {
+        isNewProduct: false,
+        stockId: s.id,
+        name: s.name,
+        category: s.category,
+        numTypes: numTypes,
+        qtyPerType: qtyPerType,
+        priceBuyPerType: (s.price_buy || 0) * qtyPerType,
+        unitPrice: s.price_buy || 0,
+        totalUnits: numTypes * qtyPerType,
+        totalPrice: (s.price_buy || 0) * (numTypes * qtyPerType),
+        alert_threshold: s.alert_threshold || 10,
+        price_sell: s.price_sell || 0,
+        expiry_date: ''
+      };
+    })
+
+    setItems([...items, ...newItems])
+    clearProcurementCart()
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!selectedSupplier || items.length === 0) return
     
     const invalidItem = items.find(item => !item.isNewProduct && !item.stockId)
     if (invalidItem) return
+ 
 
     const totalAmount = items.reduce((sum, item) => sum + (Number(item.totalPrice) || 0), 0)
     
@@ -210,6 +251,11 @@ export default function PurchaseOrderModule() {
                     <button type="button" onClick={handleSmartFill} className="text-[9px] font-black uppercase px-3 py-1.5 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white border border-amber-500/20 rounded-lg transition-all flex items-center gap-1.5 shadow-sm">
                       <Sparkles size={12} /> Remplissage Intelligent
                     </button>
+                    {procurement_cart.length > 0 && (
+                      <button type="button" onClick={handleImportFromCart} className="text-[9px] font-black uppercase px-3 py-1.5 bg-primary text-white hover:bg-primary/90 rounded-lg transition-all flex items-center gap-1.5 shadow-sm">
+                        <ShoppingCart size={12} /> Importer du Panier ({procurement_cart.length})
+                      </button>
+                    )}
                     <button type="button" onClick={() => handleAddItem(false)} className="text-[9px] font-black uppercase px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-lg transition-all flex items-center gap-1.5">
                       <Package size={12} /> Produit Existant
                     </button>

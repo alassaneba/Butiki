@@ -157,6 +157,7 @@ export default function Settings() {
   const updateConfigList = useStore(state => state.updateConfigList)
   const resetConfigLists = useStore(state => state.resetConfigLists)
   const clearAllData = useStore(state => state.clearAllData)
+  const clearAuditLogs = useStore(state => state.clearAuditLogs)
   const applySenegalSeed = useStore(state => state.applySenegalSeed)
 
   const [activeTab, setActiveTab] = useState('boutique')
@@ -826,6 +827,14 @@ export default function Settings() {
                         <button onClick={() => importInputRef.current?.click()} className="py-2.5 bg-muted/30 text-foreground border border-border/50 rounded-xl text-[10px] font-black uppercase hover:bg-muted transition-all">Import JSON</button>
                         <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImport} />
                       </div>
+                      
+                      <button 
+                        onClick={() => { if(window.confirm("Vider l'historique des actions ?")) { clearAuditLogs(); toast.success("Journal vidé"); } }}
+                        className="w-full py-3 bg-muted/20 text-muted-foreground border border-border/50 rounded-xl text-[10px] font-black uppercase hover:bg-muted transition-all flex items-center justify-center gap-2"
+                      >
+                        <Shield size={12} /> Nettoyer Journal d'Audit
+                      </button>
+
                       <button 
                         onClick={handleFullReset}
                         className="w-full p-4 border-2 border-dashed border-destructive/20 hover:border-destructive hover:bg-destructive/5 rounded-2xl flex items-center gap-3 transition-all group"

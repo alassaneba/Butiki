@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import { Plus, CheckCircle, BadgeCheck, History, ChevronDown, ChevronUp, Truck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import clsx from 'clsx'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -86,17 +87,19 @@ export default function Gaz() {
   }
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto pb-20 will-change-[opacity]">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-6 max-w-6xl mx-auto pb-24 will-change-[opacity]">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black tracking-tight uppercase">Dépôt de Gaz</h1>
-          <p className="text-[10px] text-muted-foreground mt-0.5 font-bold uppercase tracking-widest">{todayDateString}</p>
+          <h1 className="text-2xl font-black tracking-tighter uppercase italic flex items-center gap-2">
+            Gestion <span className="text-primary opacity-30 italic">Gaz</span>
+          </h1>
+          <p className="text-[9px] text-muted-foreground mt-0.5 font-black uppercase tracking-[0.3em]">{todayDateString}</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="bg-primary text-white px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-md active:scale-95"
+          className="bg-primary text-white px-6 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-premium active:scale-95"
         >
-          <Truck size={16} /> Enregistrer Livraison
+          <Plus size={18} strokeWidth={3} /> Enregistrer Arrivage
         </button>
       </header>
 
@@ -107,73 +110,92 @@ export default function Gaz() {
            <h3 className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Livraisons du Jour</h3>
          </div>
          
-         <div className="space-y-3">
+         <div className="grid gap-4 sm:grid-cols-2">
            <AnimatePresence>
              {todayLogs.length === 0 ? (
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex flex-col items-center justify-center py-10 bg-muted/10 rounded-2xl border border-dashed border-border/50 gap-2"
+                  className="sm:col-span-2 flex flex-col items-center justify-center py-16 bg-card/30 backdrop-blur-sm rounded-3xl border-2 border-dashed border-border/50 gap-4"
                 >
-                  <Truck size={24} className="text-muted-foreground/30" />
-                  <p className="text-[10px] font-black uppercase tracking-widest italic text-muted-foreground/50">Aucune livraison enregistrée</p>
+                  <div className="p-4 bg-muted/20 rounded-2xl">
+                    <Truck size={32} className="text-muted-foreground/30" />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] italic text-muted-foreground/40">Aucune livraison aujourd'hui</p>
                 </motion.div>
              ) : (
                todayLogs.map(log => {
                  const supplier = suppliers.find(s => s.id === log.supplier_id)?.name || 'Inconnu'
-                 const isLegacy = log.bottle_type !== undefined;
                  const logDate = new Date(log.date);
                  const timeLabel = logDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                 const totalQty = (log.b6_qty || 0) + (log.b9_qty || 0) + (log.b12_qty || 0);
 
                  return (
                    <motion.div 
                      key={log.id} 
                      layout
-                     initial={{ opacity: 0, scale: 0.95 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     className={`card-ultra-compact flex flex-col gap-2 transition-all ${log.paid ? 'border-green-500/20 bg-green-500/5 hover:border-green-500/30' : 'border-blue-500/20 bg-blue-500/5 hover:border-blue-500/30'}`}
+                     initial={{ opacity: 0, y: 10 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     className={clsx(
+                       "card-ultra-compact group relative overflow-hidden transition-all duration-300 border-2",
+                       log.paid ? "bg-emerald-500/5 border-emerald-500/10" : "bg-card/50 backdrop-blur-md border-border/50 hover:border-primary/30"
+                     )}
                    >
-                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-border/40 pb-2">
-                       <div className="flex items-center gap-2">
-                          <span className="font-black text-sm">{supplier}</span>
-                          {log.paid && (
-                            <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded border border-green-500/20">
-                              <BadgeCheck size={10} /> Payé
-                            </span>
-                          )}
-                          <p className="text-[8px] text-muted-foreground font-bold ml-auto sm:ml-0 tracking-widest">{timeLabel}</p>
+                     <div className="flex justify-between items-start mb-4">
+                       <div className="space-y-1">
+                         <div className="flex items-center gap-2">
+                            <h4 className="font-black text-base tracking-tight uppercase italic">{supplier}</h4>
+                            {log.paid && (
+                              <div className="bg-emerald-500 text-white p-1 rounded-full">
+                                 <BadgeCheck size={12} />
+                              </div>
+                            )}
+                         </div>
+                         <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">{timeLabel} • {totalQty} bouteilles</p>
                        </div>
-                       
-                       <div className="flex flex-wrap gap-1">
-                         {isLegacy ? (
-                           <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[8px] font-black rounded uppercase">{log.bottleType || log.bottle_type}: {log.received_quantity}</span>
-                         ) : (
-                           <>
-                             {(log.b6_qty > 0) && <span className="bg-blue-600/10 text-blue-600 border border-blue-600/20 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">B6: {log.b6_qty}</span>}
-                             {(log.b9_qty > 0) && <span className="bg-blue-600/10 text-blue-600 border border-blue-600/20 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">B9: {log.b9_qty}</span>}
-                             {(log.b12_qty > 0) && <span className="bg-blue-600/10 text-blue-600 border border-blue-600/20 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">B12: {log.b12_qty}</span>}
-                           </>
-                         )}
+                       <div className="bg-primary/10 text-primary p-2 rounded-xl">
+                          <Truck size={20} />
                        </div>
                      </div>
 
-                     <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 rounded-lg mt-1 w-full ${log.paid ? 'bg-green-500/5 border border-green-500/10' : 'bg-background border border-border/40'}`}>
-                       <div className="flex items-center justify-between w-full">
-                         <div className="text-left">
-                           <p className={`text-[8px] uppercase font-black mb-0.5 tracking-widest ${log.paid ? 'text-green-600' : 'text-muted-foreground/60'}`}>
-                             {log.paid ? 'Réglé' : 'À Régler au Livreur'}
-                           </p>
-                           <p className={`font-black text-lg ${log.paid ? 'text-green-600' : 'text-primary'}`}>{log.total_to_pay.toLocaleString()} F</p>
-                         </div>
-                         {!log.paid && (
-                           <button
-                             onClick={() => payGasLog(log.id, supplier)}
-                             className="btn-ultra-compact bg-green-600 hover:bg-green-700 text-white shadow-md active:scale-95"
-                           >
-                             Valider Paiement
-                           </button>
-                         )}
-                       </div>
+                     <div className="space-y-4">
+                        <div className="grid grid-cols-3 gap-2">
+                           {[
+                             { label: 'B6KG', val: log.b6_qty || 0 },
+                             { label: 'B9KG', val: log.b9_qty || 0 },
+                             { label: 'B12KG', val: log.b12_qty || 0 }
+                           ].map((item, idx) => (
+                             <div key={idx} className="bg-muted/20 p-2 rounded-xl border border-border/50">
+                                <label className="block text-[8px] text-muted-foreground/80 font-black text-center mb-1">{item.label}</label>
+                                <p className="text-center text-xs font-black">{item.val}</p>
+                             </div>
+                           ))}
+                        </div>
+
+                        <div className="pt-4 border-t border-border/50 flex items-center justify-between">
+                           <div>
+                              <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1">Montant Transaction</p>
+                              <div className="flex items-baseline gap-1">
+                                 <span className={clsx("text-xl font-black tracking-tighter", log.paid ? "text-emerald-500" : "text-primary")}>
+                                   {Number(log.total_to_pay || 0).toLocaleString()}
+                                 </span>
+                                 <span className="text-[10px] font-black opacity-40 uppercase">F</span>
+                              </div>
+                           </div>
+
+                           {!log.paid && (
+                             <button
+                               onClick={() => payGasLog(log.id, supplier)}
+                               className="bg-primary text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-premium active:scale-95 transition-all"
+                             >
+                               Payer Fournisseur
+                             </button>
+                           )}
+                        </div>
+                     </div>
+
+                     <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                       <Truck size={80} strokeWidth={3} />
                      </div>
                    </motion.div>
                  )

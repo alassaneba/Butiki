@@ -5,6 +5,7 @@ export const createStockSlice = (set, get) => ({
   stock_logs: [],
   inventory_history: [],
   purchase_orders: [],
+  procurement_cart: [],
 
   addStockItem: (item) => {
     const id = crypto.randomUUID()
@@ -259,6 +260,24 @@ export const createStockSlice = (set, get) => ({
     get().logAction(isGeneral ? 'Inventaire Général Terminé' : 'Inventaire Périodique Terminé', `Correction de ${stats.discrepancyValue} F sur ${session.details.length} articles`)
     toast.success(isGeneral ? 'Inventaire général enregistré' : 'Inventaire partiel enregistré')
   },
+
+  addToProcurementCart: (item) => {
+    const alreadyIn = get().procurement_cart.find(i => i.id === item.id)
+    if (alreadyIn) {
+      toast.info(`${item.name} est déjà dans le panier`)
+      return
+    }
+    set((state) => ({
+      procurement_cart: [...state.procurement_cart, item]
+    }))
+    toast.success(`${item.name} ajouté au panier de réappro`)
+  },
+
+  removeFromProcurementCart: (id) => set((state) => ({
+    procurement_cart: state.procurement_cart.filter(i => i.id !== id)
+  })),
+
+  clearProcurementCart: () => set({ procurement_cart: [] }),
 
   seedStock: (products) => {
     const boutiqueId = get().activeBoutiqueId;

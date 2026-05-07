@@ -11,18 +11,34 @@
   "categories": ["business", "finance"],
   "icons": [
     {
-      "src": "/pwa-192x192.png",
+      "src": "/logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Caisse POS",
+      "short_name": "Caisse",
+      "description": "Ouvrir la caisse de vente",
+      "url": "/caisse",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Assistant Réappro",
+      "short_name": "Réappro",
+      "description": "Vérifier le stock bas",
+      "url": "/procurement",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    }
+  ],
   "prefer_related_applications": false
 }

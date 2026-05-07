@@ -14,6 +14,9 @@ export default function Procurement() {
   const allStock = useStore(state => state.stock || [])
   const allBreadLogs = useStore(state => state.bread_logs || [])
   const allGasLogs = useStore(state => state.gas_logs || [])
+  const addToProcurementCart = useStore(state => state.addToProcurementCart)
+  const procurement_cart = useStore(state => state.procurement_cart || [])
+  const clearProcurementCart = useStore(state => state.clearProcurementCart)
   
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
   const bread_logs = useMemo(() => allBreadLogs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId), [allBreadLogs, activeBoutiqueId])
@@ -64,21 +67,53 @@ export default function Procurement() {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 pb-20">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight uppercase">Assistant Réappro</h1>
-          <p className="text-muted-foreground text-sm font-bold uppercase tracking-widest mt-1">Planification des Commandes Fournisseurs</p>
+          <h1 className="text-2xl font-black tracking-tight uppercase italic flex items-center gap-2">
+            <ShoppingBag className="text-primary" /> Assistant <span className="text-primary">Réappro</span>
+          </h1>
+          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest mt-1">Planification des Commandes Fournisseurs</p>
         </div>
-        <div className="flex items-center gap-4">
-          {totalBudget > 0 && (
-            <div className="text-right hidden sm:block">
-              <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Budget Estimé</p>
-              <p className="text-sm font-black text-primary">{formatF(totalBudget)}</p>
-            </div>
-          )}
-          <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-wider">
-            <TrendingUp size={14} /> Analyse sur 7 jours
-          </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-wider">
+          <TrendingUp size={14} /> Analyse Intelligence Artificielle
         </div>
       </header>
+
+      {/* Global Summary Card (PRO MAX Optimization) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-primary p-6 rounded-3xl text-white shadow-xl shadow-primary/20 relative overflow-hidden group">
+          <Package className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform" size={100} />
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Budget de Réappro Total</p>
+          <h3 className="text-3xl font-black tracking-tighter mt-1">{formatF(totalBudget)}</h3>
+          <p className="text-[9px] font-bold mt-2 opacity-80 uppercase tracking-widest">Couvre {restockList.length} articles en stock bas</p>
+        </div>
+
+        <div className="bg-card border-2 border-border p-6 rounded-3xl shadow-sm relative overflow-hidden group">
+          <ShoppingCart className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform text-primary" size={100} />
+          <div className="flex justify-between items-start">
+             <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Panier de Réappro</p>
+                <h3 className="text-3xl font-black tracking-tighter mt-1">{procurement_cart.length} <span className="text-xs text-muted-foreground uppercase">Articles</span></h3>
+             </div>
+             {procurement_cart.length > 0 && (
+                <button 
+                  onClick={clearProcurementCart}
+                  className="text-[9px] font-black uppercase text-destructive hover:bg-destructive/10 px-2 py-1 rounded-lg transition-colors"
+                >
+                  Vider
+                </button>
+             )}
+          </div>
+          <p className="text-[9px] font-bold text-muted-foreground/60 mt-2 uppercase tracking-widest">Prêt pour import dans module Achats</p>
+        </div>
+
+        <div className="bg-emerald-500/5 border-2 border-emerald-500/20 p-6 rounded-3xl shadow-sm relative overflow-hidden group">
+          <CheckCircle2 className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform text-emerald-500" size={100} />
+          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Santé du Stock</p>
+          <h3 className="text-3xl font-black tracking-tighter mt-1 text-emerald-600">
+             {stock.length > 0 ? Math.round(((stock.length - restockList.length) / stock.length) * 100) : 100}%
+          </h3>
+          <p className="text-[9px] font-bold text-emerald-600/60 mt-2 uppercase tracking-widest">Articles au niveau optimal</p>
+        </div>
+      </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Section Pain */}
@@ -186,7 +221,10 @@ export default function Procurement() {
                   </p>
                   <p className="text-[9px] font-bold text-muted-foreground/60 mt-1 uppercase italic">Estimation: {formatF(item.estimatedCost)}</p>
                 </div>
-                <button className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shrink-0">
+                <button 
+                  onClick={() => addToProcurementCart(item)}
+                  className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shrink-0"
+                >
                   <ShoppingCart size={18} />
                 </button>
               </div>
