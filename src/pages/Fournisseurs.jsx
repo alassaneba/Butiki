@@ -148,11 +148,11 @@ export default function Fournisseurs() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1">
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1 flex-wrap">
                 <button onClick={() => setDetailSupplier(supplier)} className="flex items-center gap-1.5 p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all text-[9px] font-bold uppercase">
                   <History size={12} /> Détails
                 </button>
-                <div className="flex gap-1.5 shrink-0">
+                <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
                   {supplier.phone && (
                     <a href={`https://wa.me/${supplier.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><MessageCircle size={14} /></a>
                   )}

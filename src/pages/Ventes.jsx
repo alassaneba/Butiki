@@ -15,6 +15,12 @@ import { formatSaleReceipt, printReceipt } from '../lib/bluetooth'
 import { useVoiceInput } from '../lib/useVoiceInput'
 import Scanner from '../components/Scanner'
 
+function ImageWithFallback({ src, alt, fallback }) {
+  const [error, setError] = useState(false)
+  if (!src || error) return fallback
+  return <img src={src} alt={alt} onError={() => setError(true)} className="w-full h-full object-cover" />
+}
+
 const formatF = (val) => `${Number(val || 0).toLocaleString('fr-FR')} F`
 const formatTime = (dateStr) => {
   try {
@@ -412,8 +418,12 @@ export default function Ventes() {
                             ui.viewMode === 'list' ? "flex-row items-center gap-3 py-3 h-[70px]" : "h-[115px]"
                           )}
                         >
-                          <div className={clsx("w-9 h-9 rounded-xl bg-primary/5 text-primary flex items-center justify-center shrink-0", ui.viewMode === 'list' ? "w-8 h-8" : "mb-1")}>
-                            <Package size={ui.viewMode === 'list' ? 16 : 20} />
+                          <div className={clsx("w-9 h-9 rounded-xl bg-primary/5 text-primary flex items-center justify-center shrink-0 overflow-hidden", ui.viewMode === 'list' ? "w-8 h-8" : "mb-1")}>
+                            <ImageWithFallback 
+                              src={p.image} 
+                              alt={p.name} 
+                              fallback={<Package size={ui.viewMode === 'list' ? 16 : 20} />} 
+                            />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-black uppercase tracking-tight truncate">{p.name}</p>

@@ -227,8 +227,8 @@ export default function Inventaire() {
           </div>
 
           {/* Filtres & Actions */}
-          <div className="flex flex-wrap gap-2 items-center justify-between">
-            <div className="flex gap-2 flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+            <div className="flex gap-2 w-full sm:flex-1">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                 <input 
@@ -241,18 +241,18 @@ export default function Inventaire() {
               </div>
               <button 
                 onClick={() => setIsScanning(!isScanning)} 
-                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1 ${isScanning ? 'bg-destructive text-white' : 'bg-card text-foreground hover:bg-muted border-border'}`}
+                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1 shrink-0 ${isScanning ? 'bg-destructive text-white' : 'bg-card text-foreground hover:bg-muted border-border'}`}
               >
                 {isScanning ? <X size={14}/> : <ScanBarcode size={14}/>}
                 <span className="hidden sm:inline">{isScanning ? 'Fermer' : 'Scan'}</span>
               </button>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               {activeTab === 'general' && (
                 <button 
                   onClick={() => setShowNewProductModal(true)}
-                  className="px-3 py-2 rounded-xl bg-secondary text-foreground font-black text-[10px] uppercase border border-border hover:bg-muted transition-all flex items-center gap-1.5 shadow-sm"
+                  className="flex-1 sm:flex-none justify-center px-3 py-2 rounded-xl bg-secondary text-foreground font-black text-[10px] uppercase border border-border hover:bg-muted transition-all flex items-center gap-1.5 shadow-sm"
                 >
                   <Plus size={14}/> Produit Inconnu
                 </button>
@@ -260,7 +260,7 @@ export default function Inventaire() {
               <button 
                 disabled={sessionStats.countedItems === 0 && activeTab !== 'general'}
                 onClick={() => setShowSummary(true)}
-                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase shadow-md active:scale-95 disabled:opacity-30 transition-all flex items-center gap-1.5"
+                className="flex-1 sm:flex-none justify-center px-4 py-2 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase shadow-md active:scale-95 disabled:opacity-30 transition-all flex items-center gap-1.5"
               >
                 <Save size={14}/> Valider ({sessionStats.countedItems})
               </button>

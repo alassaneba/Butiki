@@ -13,6 +13,12 @@ import clsx from 'clsx'
 
 const formatF = (val) => `${Math.round(val || 0).toLocaleString('fr-FR')} F`
 
+function ImageWithFallback({ src, alt, fallback }) {
+  const [error, setError] = React.useState(false)
+  if (!src || error) return fallback
+  return <img src={src} alt={alt} onError={() => setError(true)} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+}
+
 export default function Catalogue() {
   const stock = useStore(state => state.stock) || []
   const config = useStore(state => state.config)
@@ -188,7 +194,7 @@ export default function Catalogue() {
                      className="w-40 shrink-0 bg-white dark:bg-zinc-900 p-3 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 shadow-sm cursor-pointer"
                    >
                       <div className="w-full h-32 rounded-2xl bg-zinc-50 dark:bg-zinc-800 mb-3 flex items-center justify-center overflow-hidden">
-                         {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <Tag size={24} className="text-zinc-300" />}
+                         <ImageWithFallback src={item.image} alt={item.name} fallback={<Tag size={24} className="text-zinc-300" />} />
                       </div>
                       <h4 className="font-bold text-[11px] truncate mb-1">{item.name}</h4>
                       <p className="font-black text-xs text-primary">{formatF(item.price_sell)}</p>
@@ -267,16 +273,11 @@ export default function Catalogue() {
                         : "border-zinc-100 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-sm"
                     )}
                   >
-                     {/* Image Container */}
                      <div className={clsx(
                         "relative bg-zinc-50 dark:bg-zinc-800 shrink-0 flex items-center justify-center text-zinc-400 group-hover:text-primary transition-all overflow-hidden shadow-inner rounded-3xl",
                         viewMode === 'grid' ? "w-full aspect-square" : "w-24 h-24"
                      )}>
-                        {item.image ? (
-                          <img src={item.image} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" alt={item.name} />
-                        ) : (
-                          <Tag size={viewMode === 'grid' ? 40 : 32} strokeWidth={1.5} />
-                        )}
+                        <ImageWithFallback src={item.image} alt={item.name} fallback={<Tag size={viewMode === 'grid' ? 40 : 32} strokeWidth={1.5} />} />
                         
                         {item.current_stock <= 0 && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
@@ -371,7 +372,7 @@ export default function Catalogue() {
                <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25 }} className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-white dark:bg-zinc-900 rounded-t-[3.5rem] z-[110] overflow-hidden flex flex-col shadow-2xl">
                   <div className="relative h-80 shrink-0">
                      <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                        {selectedProduct.image ? <img src={selectedProduct.image} className="w-full h-full object-cover" /> : <Tag size={80} className="text-zinc-300" />}
+                        <ImageWithFallback src={selectedProduct.image} alt={selectedProduct.name} fallback={<Tag size={80} className="text-zinc-300" />} />
                      </div>
                      <button onClick={() => setSelectedProduct(null)} className="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-black/20 backdrop-blur-md text-white flex items-center justify-center"><X size={24}/></button>
                   </div>
@@ -445,7 +446,7 @@ export default function Catalogue() {
                     {cartItems.map(item => (
                        <div key={item.id} className="flex items-center gap-4 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-3xl">
                           <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 shrink-0 flex items-center justify-center overflow-hidden">
-                             {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <Tag size={20} />}
+                             <ImageWithFallback src={item.image} alt={item.name} fallback={<Tag size={20} />} />
                           </div>
                           <div className="flex-1 min-w-0">
                              <h4 className="font-bold text-sm truncate">{item.name}</h4>

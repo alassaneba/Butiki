@@ -179,7 +179,7 @@ export default function Layout() {
           <NotificationCenter />
         </header>
 
-        <div className="flex-1 p-2 sm:p-4 flex flex-col relative w-full overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 flex flex-col relative w-full overflow-y-auto overflow-x-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

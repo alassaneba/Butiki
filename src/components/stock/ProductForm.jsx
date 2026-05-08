@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Plus, PackageSearch } from 'lucide-react'
+import { useState, useMemo, useRef } from 'react'
+import { Plus, PackageSearch, ImagePlus, X } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 
 export default function ProductForm({ onSuccess }) {
@@ -13,6 +13,17 @@ export default function ProductForm({ onSuccess }) {
   const [thresholdUnit, setThresholdUnit] = useState('10')
   const [priceSellUnit, setPriceSellUnit] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
+  const [imageBase64, setImageBase64] = useState(null)
+  
+  const fileInputRef = useRef(null)
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => setImageBase64(reader.result)
+    reader.readAsDataURL(file)
+  }
 
   const totalPriceBuy = useMemo(() => (Number(numTypes) || 0) * (Number(priceBuyPerType) || 0), [numTypes, priceBuyPerType])
   const totalUnits = useMemo(() => (Number(numTypes) || 0) * (Number(qtyPerType) || 0), [numTypes, qtyPerType])
@@ -33,9 +44,10 @@ export default function ProductForm({ onSuccess }) {
       alert_threshold: Number(thresholdUnit) || 10, 
       price_buy: priceBuyUnit,
       price_sell: Number(priceSellUnit) || 0,
-      expiry_date: expiryDate
+      expiry_date: expiryDate,
+      image: imageBase64
     })
-    setName(''); setTypeProduit(''); setNumTypes(''); setQtyPerType(''); setPriceBuyPerType(''); setThresholdUnit('10'); setPriceSellUnit(''); setExpiryDate('')
+    setName(''); setTypeProduit(''); setNumTypes(''); setQtyPerType(''); setPriceBuyPerType(''); setThresholdUnit('10'); setPriceSellUnit(''); setExpiryDate(''); setImageBase64(null)
     if (onSuccess) onSuccess()
   }
 
@@ -45,9 +57,40 @@ export default function ProductForm({ onSuccess }) {
         <PackageSearch size={18} className="text-primary"/> Nouveau Produit
       </h3>
       <form onSubmit={handleAddItem} className="space-y-5">
-        <div className="space-y-1.5">
-          <label className="block text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest ml-1">Désignation</label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 border border-border/40 rounded-xl bg-background text-[11px] font-black uppercase focus:ring-4 ring-primary/5 focus:border-primary/40 outline-none transition-all" placeholder="ex: Coca Cola" required />
+        <div className="flex gap-4 items-start">
+          <div className="space-y-1.5 flex-1">
+            <label className="block text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest ml-1">Désignation</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 border border-border/40 rounded-xl bg-background text-[11px] font-black uppercase focus:ring-4 ring-primary/5 focus:border-primary/40 outline-none transition-all" placeholder="ex: Coca Cola" required />
+          </div>
+          
+          <div className="space-y-1.5 shrink-0">
+            <label className="block text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest ml-1 text-center">Image</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleImageUpload} 
+            />
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              className="w-12 h-12 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-primary/5 cursor-pointer flex items-center justify-center transition-all bg-background relative overflow-hidden group"
+            >
+              {imageBase64 ? (
+                <>
+                  <img src={imageBase64} alt="Preview" className="w-full h-full object-cover" />
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); setImageBase64(null) }}
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={16} className="text-white" />
+                  </div>
+                </>
+              ) : (
+                <ImagePlus size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

@@ -240,20 +240,100 @@ export const createCoreSlice = (set, get) => ({
   clearAllData: () => set({
     suppliers: [], 
     clients: [], 
+    supplier_evaluations: [],
     expenses: [], 
     daily_cash_register: [], 
-    bread_logs: [], 
-    gas_logs: [], 
     debt_payments: [], 
+    inflows: [],
+    fixed_charges: [],
+    fintech_balances: {},
+    vault_balance: 0,
+    vault_transactions: [],
+    vault_audits: [],
     stock: [], 
     stock_logs: [],
     inventory_history: [],
     purchase_orders: [],
+    procurement_cart: [],
+    bread_logs: [], 
+    gas_logs: [], 
+    credit_logs: [],
+    fintech_transactions: [],
+    sales: [],
+    deliveries: [],
+    delivery_staff: [],
     users: [],
     activeUserId: null,
     audit_log: [],
     notifications: [],
-    credit_logs: [],
-    inflows: []
+    staff_profiles: [],
+    attendance_logs: [],
+    salary_advances: [],
+    payroll_history: [],
+    boutiques: [{ id: 'b1', name: 'Boutique Principale', location: 'Dakar', phone: '' }],
+    activeBoutiqueId: 'b1',
+    config: {
+      prices: {
+        pain: { miche: 135, deuxTiers: 90, demi: 65, unTiers: 45 },
+        gaz: { b6: 2800, b9: 4175, b12: 6000 },
+        loyalty: { ratio: 100, minPointsToRedeem: 500 }
+      },
+      dailyTarget: 0,
+      boutiqueName: 'Ma Boutique',
+      boutiqueAddress: '',
+      boutiqueWhatsApp: '',
+      boutiqueLegal: '',
+      boutiqueLogo: '',
+      appPin: '',
+      sessionTimeoutMin: 0,
+      expense_categories: [
+        { value: 'loyer', label: 'Loyer Boutique', emoji: '🏠' },
+        { value: 'electricite', label: 'Électricité (SENELEC)', emoji: '⚡' },
+        { value: 'eau', label: 'Eau (SEN\'EAU)', emoji: '💧' },
+        { value: 'salaire', label: 'Salaires & Primes', emoji: '💰' },
+        { value: 'transport', label: 'Transport / Logistique', emoji: '🚚' },
+        { value: 'maintenance', label: 'Maintenance / Réparation', emoji: '🔧' },
+        { value: 'fournitures', label: 'Fournitures de bureau', emoji: '📁' },
+        { value: 'marketing', label: 'Marketing / Publicité', emoji: '📢' },
+        { value: 'frais_bancaires', label: 'Frais Mob. Money / Banques', emoji: '🏦' },
+        { value: 'divers', label: 'Divers / Imprévus', emoji: '⚙️' }
+      ],
+      vault_categories_in: [
+        'Fond de roulement initial',
+        'Apport Gérant / Actionnaire',
+        'Versement Caisse (Fin de journée)',
+        'Dépôt de Sécurité',
+        'Remboursement de Prêt',
+        'Autre Entrée Exceptionnelle'
+      ],
+      vault_categories_out: [
+        'Retrait Personnel Gérant',
+        'Achat Marchandise (Gros)',
+        'Investissement Matériel',
+        'Paiement Fournisseur Stratégique',
+        'Avance sur Salaire',
+        'Dépôt en Banque',
+        'Frais d\'Urgence Boutique',
+        'Autre Sortie Exceptionnelle'
+      ],
+      fintech_providers: [
+        { name: 'Wave', value: 'wave', color: '#1e40af' },
+        { name: 'Orange Money', value: 'orange', color: '#ea580c' }
+      ],
+      phone_credit_providers: [
+        { name: 'Orange', value: 'orange', emoji: '🟠' },
+        { name: 'Free', value: 'free', emoji: '🔴' },
+        { name: 'Expresso', value: 'expresso', emoji: '🔵' }
+      ],
+      active_modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'charges', 'depot', 'clients', 'fournisseurs', 'historique', 'previsions', 'settings', 'tresorerie', 'procurement', 'audit'],
+      role_permissions: {
+        gerant: { full_access: true },
+        caissier: { 
+          modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'],
+          can_delete: false,
+          can_view_reports: false
+        }
+      }
+    }
   })
 });

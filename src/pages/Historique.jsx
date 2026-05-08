@@ -243,7 +243,7 @@ export default function Historique() {
                         </div>
                       </div>
 
-                      <div className="mobile-dashboard-grid sm:flex sm:items-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-border/40 pt-2 sm:pt-0 sm:pl-4">
+                      <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-border/40 pt-2 sm:pt-0 sm:pl-4">
                         <div className="p-1.5 sm:p-0">
                           <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 mb-0.5 sm:hidden">Caisse</p>
                           <p className="font-black text-[11px] sm:text-sm">{isClosed ? `${reg.closing_balance.toLocaleString()} F` : '--'}</p>
@@ -252,7 +252,7 @@ export default function Historique() {
                           <p className="text-[8px] font-black uppercase tracking-widest text-primary/60 mb-0.5 sm:hidden">Ventes</p>
                           <p className="font-black text-[11px] sm:text-sm text-primary">{isClosed ? `${reg.calculated_sales.toLocaleString()} F` : '--'}</p>
                         </div>
-                        <div className="flex gap-2 w-full sm:w-auto">
+                        <div className="flex gap-2 w-full sm:w-auto col-span-2 sm:col-span-1">
                           {isClosed ? (
                             <button
                               onClick={() => setSelectedDetailRegister(reg)}
@@ -313,7 +313,7 @@ export default function Historique() {
                         </div>
                       </div>
 
-                      <div className="mobile-dashboard-grid sm:flex sm:items-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-border/40 pt-2 sm:pt-0 sm:pl-4">
+                      <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-border/40 pt-2 sm:pt-0 sm:pl-4">
                         <div className="p-1.5 sm:p-0">
                           <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 mb-0.5 sm:hidden">Montant</p>
                           <p className="font-black text-[11px] sm:text-sm">{(log.total_to_pay || 0).toLocaleString()} F</p>

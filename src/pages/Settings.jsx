@@ -282,20 +282,20 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-10">
-      <header className="flex justify-between items-end px-2">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight uppercase italic">Configuration</h1>
-          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-1">Personnalisation du système Butik</p>
+    <div className="space-y-6 max-w-5xl mx-auto pb-20 overflow-x-hidden min-w-0">
+      <header className="flex justify-between items-end min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight uppercase italic truncate">Configuration</h1>
+          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em] mt-1">Butik · Paramètres</p>
         </div>
-        <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-2xl border border-border/50">
+        <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-2xl border border-border/50 shrink-0">
           <Database size={14} className="text-primary" />
           <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{ui.storageSize}</span>
         </div>
       </header>
 
       {/* Tabs Menu - Compact & Responsive */}
-      <div className="flex bg-card/50 backdrop-blur-md p-1 rounded-3xl border border-border/50 shadow-premium overflow-x-auto no-scrollbar gap-1 mx-2">
+      <div className="flex bg-card/50 backdrop-blur-md p-1 rounded-3xl border border-border/50 shadow-premium overflow-x-auto no-scrollbar gap-0.5">
         {TABS.map(tab => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -304,11 +304,11 @@ export default function Settings() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={clsx(
-                "flex-1 min-w-[65px] sm:min-w-[100px] flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-widest transition-all duration-300",
-                isActive ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" : "text-muted-foreground/60 hover:bg-muted/50 hover:text-foreground"
+                "flex-1 min-w-[52px] flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-2xl text-[7px] sm:text-[8px] font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap",
+                isActive ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground/60 hover:bg-muted/50 hover:text-foreground"
               )}
             >
-              <Icon size={14} strokeWidth={isActive ? 3 : 2} />
+              <Icon size={13} strokeWidth={isActive ? 3 : 2} />
               <span className={clsx("transition-opacity", isActive ? "opacity-100" : "opacity-70")}>{tab.label}</span>
             </button>
           )
@@ -321,10 +321,10 @@ export default function Settings() {
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -10 }}
-          className="px-2"
+          className="min-w-0"
         >
           {activeTab === 'boutique' && (
-            <div className="grid lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="lg:col-span-1 space-y-6">
                 <Card title="Identité Visuelle" icon={ImageIcon}>
                    <div className="flex flex-col items-center gap-6 py-4">
@@ -401,7 +401,7 @@ export default function Settings() {
           )}
 
           {activeTab === 'prices' && (
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                <Card title="Grille Tarifaire Pain" icon={Croissant}>
                   <div className="space-y-2">
                     {[
@@ -459,10 +459,10 @@ export default function Settings() {
           )}
 
           {activeTab === 'lists' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-[28px] mx-2">
+            <div className="space-y-4 sm:space-y-6 min-w-0">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-primary/5 border border-primary/20 rounded-[28px]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary"><Bell size={18} /></div>
+                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0"><Bell size={18} /></div>
                   <div>
                     <p className="text-[10px] font-black uppercase text-primary tracking-widest">Configuration Rapide</p>
                     <p className="text-[11px] font-bold text-muted-foreground">Restaurer les catégories standards Butik Pro.</p>
@@ -470,13 +470,13 @@ export default function Settings() {
                 </div>
                 <button 
                   onClick={() => window.confirm("Ecraser vos listes ?") && resetConfigLists()}
-                  className="px-4 py-2 bg-primary text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-primary/20"
+                  className="w-full sm:w-auto px-4 py-2 bg-primary text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-primary/20"
                 >
                   Réinitialiser
                 </button>
               </div>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <ListEditor title="Dépenses" icon={Palette} items={config?.expense_categories || []} type="category" onUpdate={l => updateConfigList('expense_categories', l)} />
                 <ListEditor title="Fintech" icon={Smartphone} items={config?.fintech_providers || []} type="fintech" onUpdate={l => updateConfigList('fintech_providers', l)} />
                 <ListEditor title="Opérateurs" icon={Smartphone} items={config?.phone_credit_providers || []} type="phone" onUpdate={l => updateConfigList('phone_credit_providers', l)} />
@@ -601,15 +601,15 @@ export default function Settings() {
           )}
 
           {activeTab === 'integrations' && (
-            <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-5xl mx-auto">
                <Card title="WhatsApp Reporting API" icon={MessageCircle}>
                   <div className="space-y-4">
-                     <div className="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
                         <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                            <span className="text-[10px] font-black uppercase text-emerald-600">Connecté à WhatsApp Web</span>
                         </div>
-                        <button className="text-[9px] font-black text-emerald-600 underline uppercase">Tester</button>
+                        <button className="text-[9px] font-black text-emerald-600 underline uppercase self-end sm:self-auto">Tester</button>
                      </div>
                      <div className="space-y-3">
                         <label className="flex items-center gap-3 p-3 bg-muted/20 border border-border/30 rounded-2xl cursor-pointer hover:bg-muted/40 transition-all">
@@ -632,9 +632,9 @@ export default function Settings() {
 
                <Card title="Imprimante Thermique (ESC/POS)" icon={Printer}>
                   <div className="space-y-4">
-                     <div className="grid grid-cols-2 gap-2">
-                        <button className="py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-primary/20 hover:scale-105 transition-all">Sélecteur Bluetooth</button>
-                        <button className="py-3 bg-muted text-muted-foreground border border-border/50 rounded-xl text-[9px] font-black uppercase hover:bg-muted/50 transition-all">Sélecteur USB / LAN</button>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button className="w-full py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">Sélecteur Bluetooth</button>
+                        <button className="w-full py-3 bg-muted text-muted-foreground border border-border/50 rounded-xl text-[9px] font-black uppercase hover:bg-muted/50 transition-all">Sélecteur USB / LAN</button>
                      </div>
                      <div className="space-y-1.5">
                         <Label>Format du Reçu</Label>
@@ -754,17 +754,17 @@ export default function Settings() {
           )}
 
           {activeTab === 'data' && (
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-6">
                 <Card title="Synchronisation" icon={Cloud}>
                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-muted/20 rounded-2xl border border-border/30">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-muted/20 rounded-2xl border border-border/30">
                         <div className="flex items-center gap-2">
-                           <div className={clsx("w-2 h-2 rounded-full", cloudToken ? "bg-green-500" : "bg-red-500")} />
+                           <div className={clsx("w-2 h-2 rounded-full shrink-0", cloudToken ? "bg-green-500" : "bg-red-500")} />
                            <span className="text-[10px] font-black uppercase text-muted-foreground">{cloudToken ? 'Auto-Sync Actif' : 'Sauvegarde Inactive'}</span>
                         </div>
                         {lastBackupDate && (
-                           <div className="text-right">
+                           <div className="text-left sm:text-right">
                              <p className="text-[8px] font-black uppercase text-muted-foreground">Dernier Cloud</p>
                              <p className="text-[9px] font-bold text-primary">{lastBackupDate}</p>
                            </div>
@@ -848,7 +848,7 @@ export default function Settings() {
                    </div>
                 </Card>
 
-                <div className="p-5 bg-card/30 border border-border/50 rounded-[24px] flex justify-between items-center">
+                <div className="p-5 bg-card/30 border border-border/50 rounded-[24px] flex justify-between items-center flex-wrap gap-4">
                    <div>
                       <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Version</p>
                       <p className="text-lg font-black tracking-tighter">Butik v2.5.0</p>
@@ -860,7 +860,7 @@ export default function Settings() {
           )}
 
           {activeTab === 'integrations' && (
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                <Card title="Connected Ecosystem (API)" icon={Globe}>
                   <div className="space-y-4">
                      <div className="p-4 bg-muted/20 border border-border/50 rounded-2xl">

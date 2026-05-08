@@ -391,15 +391,15 @@ export default function Clients() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1">
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1 flex-wrap">
                   <div className="flex gap-1">
                     <button onClick={() => updateUi({ detailClient: client })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all"><History size={12} /></button>
                     <button onClick={() => updateUi({ activeClient: { type: 'note', ...client } })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all"><Package size={12} /></button>
                   </div>
-                  <div className="flex gap-1.5 shrink-0">
+                  <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
                     {client.phone && <button onClick={() => handleWhatsAppRelance(client)} className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><MessageCircle size={14} /></button>}
                     <button onClick={() => updateUi({ activeClient: { type: 'pay', ...client } })} className="btn-ultra-compact bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white">ENCAISSER</button>
-                    <button onClick={() => updateUi({ activeClient: { type: 'add', ...client } })} className="btn-ultra-compact bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white">ACHAT SANS CASH</button>
+                    <button onClick={() => updateUi({ activeClient: { type: 'add', ...client } })} className="btn-ultra-compact bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white">+ DETTE</button>
                   </div>
                 </div>
               </motion.div>
