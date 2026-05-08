@@ -18,7 +18,7 @@ export default function CloudSyncManager() {
     const performSync = async () => {
       try {
         console.log('[CloudSync] Tentative de sauvegarde automatique...')
-        const dataStr = await get('butiki-storage')
+        const dataStr = await get('butik-storage')
         if (dataStr) {
           await uploadToDrive(cloudToken, dataStr)
           const now = new Date().toLocaleString()

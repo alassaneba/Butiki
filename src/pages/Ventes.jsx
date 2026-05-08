@@ -32,8 +32,8 @@ const formatDate = (dateStr) => {
 export default function Ventes() {
   const navigate = useNavigate()
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const allStock = useStore(state => state.stock || [])
-  const allSales = useStore(state => state.sales || [])
+  const allStock = useStore(state => state.stock) || []
+  const allSales = useStore(state => state.sales) || []
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
   const sales = useMemo(() => allSales.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSales, activeBoutiqueId])
   const clients = useStore(state => state.clients)
@@ -41,6 +41,7 @@ export default function Ventes() {
   const addSale = useStore(state => state.addSale)
   const cancelSale = useStore(state => state.cancelSale)
   const addClient = useStore(state => state.addClient)
+  const useLoyaltyPoints = useStore(state => state.useLoyaltyPoints)
   
   // 🚀 P3 — États groupés pour optimisation des rendus
   const [ui, setUi] = useState({ 
@@ -59,6 +60,7 @@ export default function Ventes() {
     isSplitMode: false,
     selectedClientId: '',
     discountAmount: 0,
+    pointsUsed: 0,
     autoPrint: true
   })
 
@@ -144,7 +146,11 @@ export default function Ventes() {
       if (existing) return prev.map(item => item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item)
       return [...prev, { productId: product.id, name: product.name, unitPrice: product.price_sell, quantity: 1 }]
     })
+    setCartPulse(true)
+    setTimeout(() => setCartPulse(false), 300)
   }
+
+  const [cartPulse, setCartPulse] = useState(false)
 
   const updateCartQty = (id, delta) => setCart(prev => prev.map(item => item.productId === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item))
   const removeFromCart = (id) => setCart(prev => prev.filter(item => item.productId !== id))
@@ -178,8 +184,21 @@ export default function Ventes() {
         ? Object.entries(splitPayments).filter(([_, amt]) => amt > 0).map(([method, amount]) => ({ method, amount }))
         : [{ method: terminal.paymentMethod, amount: totalAmount }]
 
-      if (paymentsArray.some(p => p.method === 'credit') && !terminal.selectedClientId) {
-        return toast.error("Client requis pour le paiement à crédit")
+      if (paymentsArray.some(p => p.method === 'credit')) {
+        if (!terminal.selectedClientId) {
+          updateStatus({ isProcessing: false })
+          return toast.error("Client requis pour le paiement à crédit")
+        }
+        const client = clients.find(c => c.id === terminal.selectedClientId)
+        if (client) {
+          const creditAmount = paymentsArray.find(p => p.method === 'credit')?.amount || 0
+          const limit = client.credit_limit || 0
+          const currentDebt = client.total_debt || 0
+          if (limit > 0 && (currentDebt + creditAmount) > limit) {
+            updateStatus({ isProcessing: false })
+            return toast.error(`⚠️ Plafond dépassé (${limit.toLocaleString()} F). Reste disponible: ${Math.max(0, limit - currentDebt).toLocaleString()} F`)
+          }
+        }
       }
 
       const saleData = { 
@@ -192,10 +211,14 @@ export default function Ventes() {
       }
       
       const saleId = await addSale(saleData)
+
+      if (terminal.pointsUsed > 0 && terminal.selectedClientId) {
+        useLoyaltyPoints(terminal.selectedClientId, terminal.pointsUsed, terminal.pointsUsed)
+      }
       
       // Réinitialisation immédiate pour éviter le blocage UI
       setCart([]); 
-      updateTerminal({ discountAmount: 0, paymentMethod: 'cash', selectedClientId: '', isSplitMode: false });
+      updateTerminal({ discountAmount: 0, pointsUsed: 0, paymentMethod: 'cash', selectedClientId: '', isSplitMode: false });
       setSplitPayments({ cash: 0, wave: 0, orange: 0, credit: 0 });
       updateUi({ showCartDrawer: false }); 
 
@@ -259,7 +282,7 @@ export default function Ventes() {
     const client = clients.find(c => c.id === sale.clientId)
     const phone = client?.phone || ''
     
-    let message = `*REÇU BUTIKI - #${sale.id.slice(0, 8).toUpperCase()}*\n`
+    let message = `*REÇU BUTIK - #${sale.id.slice(0, 8).toUpperCase()}*\n`
     message += `Date: ${formatDate(sale.date)} ${formatTime(sale.date)}\n`
     message += `Client: ${client?.name || 'Vente Comptant'}\n`
     message += `--------------------------\n`
@@ -270,7 +293,7 @@ export default function Ventes() {
     if (sale.discountAmount > 0) message += `Remise: -${formatF(sale.discountAmount)}\n`
     message += `*TOTAL: ${formatF(sale.totalAmount)}*\n\n`
     message += `_Merci de votre confiance !_\n`
-    message += `Butiki ERP - Gestion Intelligente`
+    message += `Butik ERP - Gestion Intelligente`
 
     const url = `https://wa.me/${phone.replace(/\s/g, '')}?text=${encodeURIComponent(message)}`
     window.open(url, '_blank')
@@ -456,7 +479,10 @@ export default function Ventes() {
         {ui.activeTab === 'terminal' && cart.length > 0 && (
           <motion.button initial={{ scale: 0, y: 50 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0, y: 50 }} onClick={() => updateUi({ showCartDrawer: true })} className="fixed bottom-24 right-6 left-6 md:left-auto md:w-80 h-20 bg-primary text-white rounded-[2.5rem] shadow-2xl flex items-center justify-between px-8 z-40">
             <div className="flex items-center gap-4">
-              <div className="relative"><ShoppingCart size={28} /><span className="absolute -top-2 -right-2 w-6 h-6 bg-white text-primary rounded-full flex items-center justify-center text-xs font-black shadow-lg">{cart.length}</span></div>
+              <div className={clsx("relative transition-transform duration-300", cartPulse ? "scale-125" : "scale-100")}>
+                <ShoppingCart size={28} />
+                <span className="absolute -top-2 -right-2 w-6 h-6 bg-white text-primary rounded-full flex items-center justify-center text-xs font-black shadow-lg">{cart.length}</span>
+              </div>
               <div className="text-left"><p className="text-[10px] font-black uppercase opacity-70 leading-none mb-1">Total Panier</p><p className="text-xl font-black leading-none">{totalCart.toLocaleString()} F</p></div>
             </div>
             <div className="bg-white/20 p-3 rounded-2xl"><ArrowRight size={24} /></div>
@@ -559,8 +585,34 @@ export default function Ventes() {
                     {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
-                <input type="number" value={terminal.discountAmount || ''} onChange={e => updateTerminal({ discountAmount: Number(e.target.value) })} placeholder="Remise" className="w-24 p-3 bg-muted/30 border border-border rounded-xl text-xs font-black outline-none" />
+                <input type="number" value={terminal.discountAmount || ''} onChange={e => updateTerminal({ discountAmount: Number(e.target.value), pointsUsed: 0 })} placeholder="Remise" className="w-24 p-3 bg-muted/30 border border-border rounded-xl text-xs font-black outline-none" />
               </div>
+              {terminal.selectedClientId && (() => {
+                const client = clients.find(c => c.id === terminal.selectedClientId)
+                const pts = client?.loyalty_points || 0
+                const minPts = config?.prices?.loyalty?.minPointsToRedeem || 500
+                if (pts >= minPts) {
+                  return (
+                    <div className="flex items-center justify-between bg-amber-500/5 p-3 rounded-2xl border border-amber-500/20">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase text-amber-600 flex items-center gap-1"><Star size={12}/> Fidélité</span>
+                        <span className="text-xs font-bold">{pts} Points disponibles</span>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          const maxUsable = Math.min(pts, totalCart)
+                          updateTerminal({ discountAmount: maxUsable, pointsUsed: maxUsable })
+                          toast.success(`Remise de ${maxUsable} F appliquée`)
+                        }}
+                        className="px-3 py-1.5 bg-amber-500 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95"
+                      >
+                        Utiliser
+                      </button>
+                    </div>
+                  )
+                }
+                return null
+              })()}
             </div>
 
             <div className="bg-primary p-6 rounded-[2.5rem] shadow-2xl flex justify-between items-center text-white relative overflow-hidden group">

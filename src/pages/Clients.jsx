@@ -94,11 +94,11 @@ export default function Clients() {
   }
 
   const handleWhatsAppRelance = (client) => {
-    let message = `Bonjour ${client.name}, vous avez une ardoise de ${client.total_debt?.toLocaleString()} F chez BUTIKI. Merci de passer régulariser dès que possible. 🙏`
+    let message = `Bonjour ${client.name}, vous avez une ardoise de ${client.total_debt?.toLocaleString()} F chez BUTIK. Merci de passer régulariser dès que possible. 🙏`
     
     // IA CRM : Si le client est inactif (>30j), on change le ton pour un message de fidélisation
     if (client.isInactive) {
-      message = `Bonjour ${client.name}, nous avons remarqué que vous n'êtes pas passé à la boutique depuis ${client.daysInactive} jours. Au plaisir de vous revoir chez Butiki ! 🌟`
+      message = `Bonjour ${client.name}, nous avons remarqué que vous n'êtes pas passé à la boutique depuis ${client.daysInactive} jours. Au plaisir de vous revoir chez Butik ! 🌟`
     }
 
     const phone = client.phone ? client.phone.replace(/\D/g, '') : ''
@@ -156,7 +156,7 @@ export default function Clients() {
     const ws = XLSX.utils.json_to_sheet(list)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "Débiteurs")
-    XLSX.writeFile(wb, `Debiteurs_Butiki_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`)
+    XLSX.writeFile(wb, `Debiteurs_Butik_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`)
   }
 
   const changeToReturn = useMemo(() => {
@@ -598,7 +598,7 @@ export default function Clients() {
       {/* Imprimante cachée */}
       <div className="hidden print:block text-black bg-white p-4 w-[58mm] mx-auto text-[10px] font-mono leading-tight">
         <div className="text-center mb-4 border-b-2 border-black pb-2">
-          <h2 className="font-black text-lg">BUTIKI</h2>
+          <h2 className="font-black text-lg">BUTIK</h2>
           <p className="font-bold text-[8px]">GESTION BOUTIQUE</p>
         </div>
         {ui.printData && (

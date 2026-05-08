@@ -56,7 +56,7 @@ export default function FintechModule({ onComplete, type = 'payment' }) {
           <Smartphone size={20} />
         </div>
         <div>
-          <h3 className="font-black uppercase text-sm tracking-tight">Fintech Butiki</h3>
+          <h3 className="font-black uppercase text-sm tracking-tight">Fintech Butik</h3>
           <p className="text-[10px] font-bold text-muted-foreground uppercase">Intégration Mobile Money</p>
         </div>
       </div>

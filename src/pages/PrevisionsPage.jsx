@@ -38,9 +38,9 @@ const StatCard = ({ title, value, subValue, trend, icon: Icon, color }) => (
 )
 
 export default function PrevisionsPage() {
-  const transactions = useStore(useShallow(state => state.transactions || []))
-  const stock = useStore(useShallow(state => state.stock || []))
-  const clients = useStore(useShallow(state => state.clients || []))
+  const transactions = useStore(state => state.transactions) || []
+  const stock = useStore(state => state.stock) || []
+  const clients = useStore(state => state.clients) || []
 
   const stats = useMemo(() => {
     const now = new Date()

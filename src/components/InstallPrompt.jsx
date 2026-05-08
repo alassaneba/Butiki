@@ -48,7 +48,7 @@ export default function InstallPrompt() {
               <Download size={18} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm">Installer Butiki</p>
+              <p className="font-bold text-sm">Installer Butik</p>
               <p className="text-xs text-muted-foreground">Accès rapide, mode hors-ligne 📱</p>
             </div>
             <div className="flex gap-2 shrink-0">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 function getInitialTheme() {
-  const stored = localStorage.getItem('butiki-theme')
+  const stored = localStorage.getItem('butik-theme')
   if (stored) return stored
   // Respecter la préférence système par défaut
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
@@ -21,7 +21,7 @@ export function useTheme() {
 
   useEffect(() => {
     applyTheme(theme)
-    localStorage.setItem('butiki-theme', theme)
+    localStorage.setItem('butik-theme', theme)
   }, [theme])
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')

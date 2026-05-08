@@ -1,7 +1,7 @@
-# Conception de l'application "Butiki"
+# Conception de l'application "Butik"
 
 ## 1. Objectif du Projet
-Développer une application Web (Local-First React/Vite) pour la gestion d'une boutique ("Butiki"), avec la capacité d'évoluer vers une Progressive Web App (PWA) / application Android (via Capacitor) à l'avenir. L'application doit fonctionner de manière robuste, même en l'absence de réseau, en stockant ses données localement tout en permettant des exports / imports.
+Développer une application Web (Local-First React/Vite) pour la gestion d'une boutique ("Butik"), avec la capacité d'évoluer vers une Progressive Web App (PWA) / application Android (via Capacitor) à l'avenir. L'application doit fonctionner de manière robuste, même en l'absence de réseau, en stockant ses données localement tout en permettant des exports / imports.
 
 ## 2. Architecture Technique
 - **Framework Outil** : React 18 + Vite (TypeScript de préférence).

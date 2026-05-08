@@ -1,4 +1,4 @@
-export const FILE_NAME = 'butiki_backup.json';
+export const FILE_NAME = 'butik_backup.json';
 
 export const getBackupFileId = async (accessToken) => {
   const response = await fetch(

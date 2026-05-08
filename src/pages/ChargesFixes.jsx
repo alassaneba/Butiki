@@ -25,7 +25,7 @@ const CHARGE_TYPES = [
 
 export default function ChargesFixes() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const allFixedCharges = useStore(state => state.fixed_charges || [])
+  const allFixedCharges = useStore(state => state.fixed_charges) || []
   const fixed_charges = useMemo(() => allFixedCharges.filter(c => c.boutiqueId === activeBoutiqueId), [allFixedCharges, activeBoutiqueId])
   const addFixedCharge = useStore(state => state.addFixedCharge)
   const payFixedCharge = useStore(state => state.payFixedCharge)

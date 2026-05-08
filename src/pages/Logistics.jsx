@@ -33,8 +33,8 @@ export default function Logistics() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   
   // Sélecteurs de base stables
-  const allDeliveries = useStore(state => state.deliveries || [])
-  const allStaff = useStore(state => state.delivery_staff || [])
+  const allDeliveries = useStore(state => state.deliveries) || []
+  const allStaff = useStore(state => state.staff) || []
   
   // Filtrage mémoïsé par boutique
   const deliveries = useMemo(() => 
@@ -50,7 +50,7 @@ export default function Logistics() {
   const addDeliveryStaff = useStore(state => state.addDeliveryStaff)
   const addDeliveryOrder = useStore(state => state.addDeliveryOrder)
   const updateDeliveryStatus = useStore(state => state.updateDeliveryStatus)
-  const sales = useStore(state => state.sales || [])
+  const sales = useStore(state => state.sales) || []
 
   const location = useLocation()
   const saleFromState = location.state?.sale
@@ -201,7 +201,7 @@ export default function Logistics() {
                                <button 
                                  onClick={() => {
                                    updateDeliveryStatus(delivery.id, 'processing')
-                                   sendWhatsApp(delivery.phone, `Bonjour ${delivery.customerName}, votre commande Butiki est en cours de préparation ! 📦`)
+                                   sendWhatsApp(delivery.phone, `Bonjour ${delivery.customerName}, votre commande Butik est en cours de préparation ! 📦`)
                                  }} 
                                  className="p-3 bg-blue-500 text-white rounded-xl shadow-lg shadow-blue-500/20"
                                >
@@ -212,7 +212,7 @@ export default function Logistics() {
                                <button 
                                  onClick={() => {
                                    updateDeliveryStatus(delivery.id, 'shipped')
-                                   const msg = `Bonjour ${delivery.customerName}, votre colis est en route ! 🛵 Livreur: ${staff?.name || 'Butiki'}.`
+                                   const msg = `Bonjour ${delivery.customerName}, votre colis est en route ! 🛵 Livreur: ${staff?.name || 'Butik'}.`
                                    sendWhatsApp(delivery.phone, msg)
                                  }} 
                                  className="p-3 bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20"
@@ -224,14 +224,14 @@ export default function Logistics() {
                                <button 
                                  onClick={() => {
                                    updateDeliveryStatus(delivery.id, 'delivered')
-                                   sendWhatsApp(delivery.phone, `Votre colis Butiki a été livré avec succès ! Merci de votre confiance. ⭐⭐⭐⭐⭐`)
+                                   sendWhatsApp(delivery.phone, `Votre colis Butik a été livré avec succès ! Merci de votre confiance. ⭐⭐⭐⭐⭐`)
                                  }} 
                                  className="p-3 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20"
                                >
                                  <Check size={18}/>
                                </button>
                              )}
-                             <button onClick={() => sendWhatsApp(delivery.phone, `Bonjour ${delivery.customerName}, nous vous contactons au sujet de votre livraison Butiki.`)} className="p-3 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl hover:bg-emerald-500 hover:text-white transition-all">
+                             <button onClick={() => sendWhatsApp(delivery.phone, `Bonjour ${delivery.customerName}, nous vous contactons au sujet de votre livraison Butik.`)} className="p-3 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl hover:bg-emerald-500 hover:text-white transition-all">
                                 <MessageSquare size={18}/>
                              </button>
                           </div>

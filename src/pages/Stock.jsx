@@ -292,8 +292,8 @@ function StockList({
 
 export default function Stock() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const allStock = useStore(state => state.stock || [])
-  const allStockLogs = useStore(state => state.stock_logs || [])
+  const allStock = useStore(state => state.stock) || []
+  const allStockLogs = useStore(state => state.stock_logs) || []
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
   const stock_logs = useMemo(() => allStockLogs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId), [allStockLogs, activeBoutiqueId])
   const updateStockQty = useStore(state => state.updateStockQty)
@@ -381,7 +381,7 @@ export default function Stock() {
 
   const exportToExcel = () => {
     const data = stock.map(i => ({ 'Désignation': i.name, 'Stock Actuel': i.current_stock, 'Seuil Alerte': i.alert_threshold, 'Prix Achat (F)': i.price_buy, 'Prix Vente (F)': i.price_sell, 'Valeur Stock (F)': i.current_stock * i.price_buy }))
-    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Inventaire'); XLSX.writeFile(wb, `Inventaire_Butiki_${new Date().toLocaleDateString()}.xlsx`)
+    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Inventaire'); XLSX.writeFile(wb, `Inventaire_Butik_${new Date().toLocaleDateString()}.xlsx`)
   }
 
   return (

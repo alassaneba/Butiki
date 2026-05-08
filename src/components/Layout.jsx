@@ -112,11 +112,11 @@ export default function Layout() {
       logAction('Déconnexion', `Utilisateur ${activeUser.name} s'est déconnecté`)
     }
     setActiveUser(null)
-    localStorage.removeItem('butiki-last-activity')
+    localStorage.removeItem('butik-last-activity')
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
+    <div className="flex h-screen bg-background text-foreground font-sans selection:bg-primary/30 overflow-hidden">
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -129,7 +129,7 @@ export default function Layout() {
           </button>
 
           <span className="font-black text-base lg:hidden bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500 uppercase italic truncate max-w-[120px]">
-            {config?.boutiqueName || 'Butiki'}
+            {config?.boutiqueName || 'Butik'}
           </span>
 
           <div className="flex-1" />
@@ -179,7 +179,7 @@ export default function Layout() {
           <NotificationCenter />
         </header>
 
-        <div className="flex-1 p-2 sm:p-4 flex flex-col relative w-full overflow-y-auto overflow-x-hidden scrollbar-hide">
+        <div className="flex-1 p-2 sm:p-4 flex flex-col relative w-full overflow-y-auto overflow-x-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

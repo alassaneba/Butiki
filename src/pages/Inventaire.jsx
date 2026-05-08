@@ -6,6 +6,7 @@ import {
   ArrowRight, DollarSign, X, Check, BarChart3, Clock, Printer, Plus, Trash2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import Scanner from '../components/Scanner'
 import { printAuditReport } from '../lib/print-report'
 import {
@@ -33,9 +34,9 @@ function StatMini({ label, value, icon: Icon, color }) {
 
 export default function Inventaire() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const allStock = useStore(state => state.stock || [])
+  const allStock = useStore(state => state.stock) || []
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
-  const allInventoryHistory = useStore(state => state.inventory_history || [])
+  const allInventoryHistory = useStore(state => state.inventory_history) || []
   const inventory_history = useMemo(() => allInventoryHistory.filter(h => (h.boutiqueId || 'b1') === activeBoutiqueId), [allInventoryHistory, activeBoutiqueId])
   const saveInventorySession = useStore(state => state.saveInventorySession)
   const addStockItem = useStore(state => state.addStockItem)
@@ -105,8 +106,22 @@ export default function Inventaire() {
   }
 
   const handleScanSuccess = (decodedText) => {
-    setSearch(decodedText)
-    setIsScanning(false)
+    const found = stock.find(p => 
+      (p.name || '').toLowerCase() === decodedText.toLowerCase() || 
+      (p.barcode && p.barcode === decodedText)
+    )
+    if (found) {
+      setCounts(prev => ({
+        ...prev,
+        [found.id]: (prev[found.id] || 0) + 1
+      }))
+      toast.success(`+1 ${found.name}`)
+      // Keep scanner open for chain scanning
+    } else {
+      setSearch(decodedText)
+      setIsScanning(false)
+      toast.error("Produit non trouvé. Recherche appliquée.")
+    }
   }
 
   const filteredStock = useMemo(() => {

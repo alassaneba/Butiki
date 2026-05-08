@@ -27,17 +27,17 @@ const formatTime = (iso) => {
 export default function Historique() {
   const daily_cash_register = useStore(state => state.daily_cash_register)
   const expenses = useStore(state => state.expenses)
-  const inflows = useStore(state => state.inflows || [])
+  const inflows = useStore(state => state.inflows) || []
   const bread_logs = useStore(state => state.bread_logs)
   const gas_logs = useStore(state => state.gas_logs)
-  const credit_logs = useStore(state => state.credit_logs || [])
+  const credit_logs = useStore(state => state.credit_logs) || []
   const suppliers = useStore(state => state.suppliers)
   const closeCashRegister = useStore(state => state.closeCashRegister)
   const logAction = useStore(state => state.logAction)
   const payBreadLog = useStore(state => state.payBreadLog)
   const payGasLog = useStore(state => state.payGasLog)
   const payCreditLog = useStore(state => state.payCreditLog)
-  const fintech_transactions = useStore(state => state.fintech_transactions || [])
+  const fintech_transactions = useStore(state => state.fintech_transactions) || []
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const activeUser = useStore(state => state.users.find(u => u.id === state.activeUserId))
 
@@ -124,7 +124,7 @@ export default function Historique() {
     const wsFintech = XLSX.utils.json_to_sheet(wsFintechData);
     XLSX.utils.book_append_sheet(wb, wsFintech, "Fintech");
 
-    XLSX.writeFile(wb, `Butiki_Historique_Complet_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `Butik_Historique_Complet_${new Date().toISOString().split('T')[0]}.xlsx`);
   }
 
   const handleCloseRegister = (e) => {

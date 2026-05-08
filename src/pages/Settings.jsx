@@ -205,7 +205,7 @@ export default function Settings() {
   }, [config])
 
   useEffect(() => {
-    get('butiki-storage').then(data => {
+    get('butik-storage').then(data => {
       if (data) {
         const size = (new Blob([data]).size / 1024).toFixed(1)
         updateUi({ storageSize: `${size} KB` })
@@ -249,7 +249,7 @@ export default function Settings() {
     if (!cloudToken) return login()
     updateUi({ isLoading: true })
     try {
-      const dataStr = await get('butiki-storage')
+      const dataStr = await get('butik-storage')
       await uploadToDrive(cloudToken, dataStr)
       setLastBackupDate(new Date().toLocaleString())
     } catch (err) {
@@ -278,7 +278,7 @@ export default function Settings() {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stock), "Stock")
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clients), "Clients")
-    XLSX.writeFile(wb, `Butiki_Export.xlsx`)
+    XLSX.writeFile(wb, `Butik_Export.xlsx`)
   }
 
   return (
@@ -286,7 +286,7 @@ export default function Settings() {
       <header className="flex justify-between items-end px-2">
         <div>
           <h1 className="text-2xl font-black tracking-tight uppercase italic">Configuration</h1>
-          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-1">Personnalisation du système Butiki</p>
+          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-1">Personnalisation du système Butik</p>
         </div>
         <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-2xl border border-border/50">
           <Database size={14} className="text-primary" />
@@ -330,10 +330,10 @@ export default function Settings() {
                    <div className="flex flex-col items-center gap-6 py-4">
                       <div 
                         onClick={() => logoInputRef.current.click()}
-                        className="w-32 h-32 rounded-[32px] border-4 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:border-primary transition-all relative overflow-hidden group bg-muted/10"
+                        className="w-32 h-32 rounded-[32px] border-4 border-dashed border-primary/30 flex items-center justify-center cursor-pointer hover:border-primary transition-all relative overflow-hidden group bg-primary shadow-lg shadow-primary/20"
                       >
                         {form.boutique.logo ? (
-                          <img src={form.boutique.logo} className="w-full h-full object-contain p-2" alt="Logo" />
+                          <img src={form.boutique.logo} className="w-full h-full object-contain p-4" alt="Logo" />
                         ) : (
                           <ImageIcon size={32} className="text-muted-foreground opacity-20" />
                         )}
@@ -371,7 +371,7 @@ export default function Settings() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Nom de l'Etablissement</Label>
-                      <Input value={form.boutique.name} onChange={e => updateForm({ boutique: { ...form.boutique, name: e.target.value } })} placeholder="Butiki Pro Max" />
+                      <Input value={form.boutique.name} onChange={e => updateForm({ boutique: { ...form.boutique, name: e.target.value } })} placeholder="Butik Pro Max" />
                     </div>
                     <div>
                       <Label>Objectif CA Journalier (F)</Label>
@@ -465,7 +465,7 @@ export default function Settings() {
                   <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary"><Bell size={18} /></div>
                   <div>
                     <p className="text-[10px] font-black uppercase text-primary tracking-widest">Configuration Rapide</p>
-                    <p className="text-[11px] font-bold text-muted-foreground">Restaurer les catégories standards Butiki Pro.</p>
+                    <p className="text-[11px] font-bold text-muted-foreground">Restaurer les catégories standards Butik Pro.</p>
                   </div>
                 </div>
                 <button 
@@ -646,7 +646,7 @@ export default function Settings() {
                      </div>
                      <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
                         <p className="text-[9px] font-black uppercase text-amber-600 mb-1">Architecture Ouverte</p>
-                        <p className="text-[10px] font-bold text-muted-foreground leading-tight">BUTIKI supporte nativement les protocoles ESC/POS pour une impression thermique instantanée sans pilote tiers.</p>
+                        <p className="text-[10px] font-bold text-muted-foreground leading-tight">BUTIK supporte nativement les protocoles ESC/POS pour une impression thermique instantanée sans pilote tiers.</p>
                      </div>
                   </div>
                </Card>
@@ -689,7 +689,7 @@ export default function Settings() {
                      </div>
                      <div className="space-y-2 border-t border-primary/10 pt-4">
                         <p className="text-[9px] font-bold text-primary/70 leading-relaxed italic">
-                           "BUTIKI API permet d'interconnecter votre boutique avec des services tiers (Comptabilité, Monitoring externe) via des flux JSON sécurisés."
+                           "BUTIK API permet d'interconnecter votre boutique avec des services tiers (Comptabilité, Monitoring externe) via des flux JSON sécurisés."
                         </p>
                         <div className="flex gap-2">
                           <span className="text-[8px] font-black px-2 py-0.5 bg-primary/10 text-primary rounded-full uppercase">JSON</span>
@@ -851,7 +851,7 @@ export default function Settings() {
                 <div className="p-5 bg-card/30 border border-border/50 rounded-[24px] flex justify-between items-center">
                    <div>
                       <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Version</p>
-                      <p className="text-lg font-black tracking-tighter">Butiki v2.5.0</p>
+                      <p className="text-lg font-black tracking-tighter">Butik v2.5.0</p>
                    </div>
                    <button onClick={() => window.location.reload()} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-all"><RefreshCw size={18}/></button>
                 </div>
@@ -864,7 +864,7 @@ export default function Settings() {
                <Card title="Connected Ecosystem (API)" icon={Globe}>
                   <div className="space-y-4">
                      <div className="p-4 bg-muted/20 border border-border/50 rounded-2xl">
-                        <Label>Clé API Butiki (Cloud Token)</Label>
+                        <Label>Clé API Butik (Cloud Token)</Label>
                         <div className="flex items-center gap-2">
                            <code className="flex-1 p-2 bg-card rounded-lg text-[10px] font-mono break-all border border-border/50">
                               {cloudToken || 'Non générée'}

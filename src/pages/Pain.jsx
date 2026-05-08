@@ -14,7 +14,7 @@ import {
 export default function Pain() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const suppliers = useStore(state => state.suppliers)
-  const allBreadLogs = useStore(state => state.bread_logs || [])
+  const allBreadLogs = useStore(state => state.bread_logs) || []
   const bread_logs = useMemo(() => allBreadLogs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId), [allBreadLogs, activeBoutiqueId])
   const addOrUpdateBreadLog = useStore(state => state.addOrUpdateBreadLog)
   const updateBreadLogReturn = useStore(state => state.updateBreadLogReturn)

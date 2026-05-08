@@ -57,8 +57,8 @@ function StatCard({ title, value, sub, icon: Icon, color, trend, trendValue, del
 
 function SystemHealth() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const allStock = useStore(state => state.stock || [])
-  const allInventoryHistory = useStore(state => state.inventory_history || [])
+  const allStock = useStore(state => state.stock) || []
+  const allInventoryHistory = useStore(state => state.inventory_history) || []
   
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
   const inventory_history = useMemo(() => allInventoryHistory.filter(h => (h.boutiqueId || 'b1') === activeBoutiqueId), [allInventoryHistory, activeBoutiqueId])
@@ -107,9 +107,9 @@ function SystemHealth() {
 
 function ModuleSyncStatus() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const breadLogs = useStore(state => state.bread_logs || [])
-  const gasLogs = useStore(state => state.gas_logs || [])
-  const creditLogs = useStore(state => state.credit_logs || [])
+  const breadLogs = useStore(state => state.bread_logs) || []
+  const gasLogs = useStore(state => state.gas_logs) || []
+  const creditLogs = useStore(state => state.credit_logs) || []
   
   const today = new Date().toLocaleDateString()
   
@@ -140,10 +140,10 @@ function ModuleSyncStatus() {
 export default function Dashboard() {
   const navigate = useNavigate()
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const all_daily_cash_register = useStore(state => state.daily_cash_register || [])
-  const allSales = useStore(state => state.sales || [])
-  const allExpenses = useStore(state => state.expenses || [])
-  const allStock = useStore(state => state.stock || [])
+  const all_daily_cash_register = useStore(state => state.daily_cash_register) || []
+  const allSales = useStore(state => state.sales) || []
+  const allExpenses = useStore(state => state.expenses) || []
+  const allStock = useStore(state => state.stock) || []
   const clients = useStore(state => state.clients) 
   const config = useStore(state => state.config)
 
@@ -261,7 +261,7 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight uppercase italic flex items-center gap-2">
-             {config?.boutiqueName || 'Butiki'} <span className="text-primary italic opacity-20">Pro Max</span>
+             {config?.boutiqueName || 'Butik'} <span className="text-primary italic opacity-20">Pro Max</span>
           </h1>
           <p className="text-muted-foreground mt-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]">Tableau de Pilotage Stratégique</p>
         </div>

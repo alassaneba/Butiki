@@ -36,10 +36,10 @@ const TABS = [
 export default function RH() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const users = useStore(state => state.users)
-  const allStaff = useStore(state => state.staff_profiles || [])
-  const allAttendance = useStore(state => state.attendance_logs || [])
-  const allSalaryAdvances = useStore(state => state.salary_advances || [])
-  const allPayrollHistory = useStore(state => state.payroll_history || [])
+  const allStaff = useStore(state => state.staff) || []
+  const allAttendance = useStore(state => state.attendance) || []
+  const allSalaryAdvances = useStore(state => state.salary_advances) || []
+  const allPayrollHistory = useStore(state => state.payroll_history) || []
 
   const staff_profiles = useMemo(() => allStaff.filter(p => (p.boutiqueId || 'b1') === activeBoutiqueId), [allStaff, activeBoutiqueId])
   const attendance_logs = useMemo(() => allAttendance.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId), [allAttendance, activeBoutiqueId])
@@ -83,7 +83,7 @@ export default function RH() {
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tight flex items-center gap-3">
             <Users className="text-primary" size={32} />
-            RH & Paie <span className="text-primary/40 text-xl italic">Butiki Pro</span>
+            RH & Paie <span className="text-primary/40 text-xl italic">Butik Pro</span>
           </h1>
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-60">Gestion du Capital Humain & Rémunération</p>
         </div>

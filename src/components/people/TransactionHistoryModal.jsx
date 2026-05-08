@@ -14,7 +14,7 @@ export default function TransactionHistoryModal({ person, onClose, isSupplier = 
 
   const handleWhatsApp = () => {
     const lines = [
-      `🏪 *BUTIKI – Relevé de compte*`,
+      `🏪 *BUTIK – Relevé de compte*`,
       `📋 ${isSupplier ? 'Fournisseur' : 'Client'} : *${person.name}*`,
       person.phone ? `📞 Tél : ${person.phone}` : null,
       `📅 Date : ${new Date().toLocaleDateString('fr-FR')}`,

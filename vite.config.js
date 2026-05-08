@@ -10,8 +10,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Butiki',
-        short_name: 'Butiki',
+        name: 'Butik',
+        short_name: 'Butik',
         description: 'Gestion de boutique',
         theme_color: '#ffffff',
         icons: [

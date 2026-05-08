@@ -1,6 +1,6 @@
 {
-  "name": "Butiki — Gestion Boutique",
-  "short_name": "Butiki",
+  "name": "Butik — Gestion Boutique",
+  "short_name": "Butik",
   "description": "Application de gestion de boutique : caisse, stock, clients, fournisseurs, pain et gaz.",
   "start_url": "/",
   "display": "standalone",

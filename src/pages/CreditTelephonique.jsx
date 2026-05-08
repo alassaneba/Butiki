@@ -13,7 +13,7 @@ import {
 export default function CreditTelephonique() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const suppliers = useStore(state => state.suppliers)
-  const allCreditLogs = useStore(state => state.credit_logs || [])
+  const allCreditLogs = useStore(state => state.credit_logs) || []
   const credit_logs = useMemo(() => allCreditLogs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId), [allCreditLogs, activeBoutiqueId])
   const addCreditLog = useStore(state => state.addCreditLog)
   const payCreditLog = useStore(state => state.payCreditLog)

@@ -47,7 +47,7 @@ const PageLoader = () => (
       </div>
     </div>
     <div className="space-y-2 text-center">
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 animate-pulse">Butiki Pro Max</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 animate-pulse">Butik Pro Max</p>
       <p className="text-xs font-bold text-muted-foreground/60 italic">Intelligence de gestion en cours...</p>
     </div>
   </div>

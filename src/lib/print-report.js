@@ -3,7 +3,7 @@
  * Génère des rapports imprimables en HTML natif (pas de dépendance externe)
  */
 
-export function printDailyReport(register, expenses, boutiqueName = 'Butiki') {
+export function printDailyReport(register, expenses, boutiqueName = 'Butik') {
   const date = new Date(register.date).toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   })
@@ -97,7 +97,7 @@ export function printDailyReport(register, expenses, boutiqueName = 'Butiki') {
   </table>` : ''}
 
   <div class="footer">
-    <p>Généré le ${new Date().toLocaleString('fr-FR')} par Butiki</p>
+    <p>Généré le ${new Date().toLocaleString('fr-FR')} par Butik</p>
     <p style="margin-top:4px;">© ${new Date().getFullYear()} ${boutiqueName}</p>
   </div>
   <br/>
@@ -112,7 +112,7 @@ export function printDailyReport(register, expenses, boutiqueName = 'Butiki') {
   win.document.close()
 }
 
-export function printAuditReport(session, boutiqueName = 'Butiki') {
+export function printAuditReport(session, boutiqueName = 'Butik') {
   const date = new Date(session.date).toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   })
@@ -199,7 +199,7 @@ export function printAuditReport(session, boutiqueName = 'Butiki') {
   </div>
 
   <div class="footer">
-    <p>Document généré par Butiki ERP – Le ${new Date().toLocaleString('fr-FR')}</p>
+    <p>Document généré par Butik ERP – Le ${new Date().toLocaleString('fr-FR')}</p>
     <p style="margin-top:4px;">Signature de l'Auditeur : __________________________</p>
   </div>
   <br/>

@@ -11,11 +11,11 @@ const formatF = (val) => `${Number(val || 0).toLocaleString('fr-FR')} F`
 
 export default function Procurement() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const allStock = useStore(state => state.stock || [])
-  const allBreadLogs = useStore(state => state.bread_logs || [])
-  const allGasLogs = useStore(state => state.gas_logs || [])
+  const allStock = useStore(state => state.stock) || []
+  const allBreadLogs = useStore(state => state.bread_logs) || []
+  const allGasLogs = useStore(state => state.gas_logs) || []
   const addToProcurementCart = useStore(state => state.addToProcurementCart)
-  const procurement_cart = useStore(state => state.procurement_cart || [])
+  const procurement_cart = useStore(state => state.procurement_cart) || []
   const clearProcurementCart = useStore(state => state.clearProcurementCart)
   
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])

@@ -6,7 +6,7 @@
 
 ---
 
-**Project:** ButikiCompactV2
+**Project:** ButikCompactV2
 **Generated:** 2026-04-24 17:56:35
 **Category:** Quantum Computing Interface
 

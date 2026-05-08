@@ -79,10 +79,10 @@ export const printReceipt = async (receiptData) => {
   }
 }
 
-// Fonction utilitaire pour formater un ticket de clôture Butiki
+// Fonction utilitaire pour formater un ticket de clôture Butik
 export const formatClosingReceipt = (register, expenses) => {
     let receiptText = "==============================\n"
-    receiptText += "     BUTIKI - CLOTURE \n"
+    receiptText += "     BUTIK - CLOTURE \n"
     receiptText += "==============================\n\n"
     receiptText += `Date: ${new Date(register.date).toLocaleDateString()}\n`
     receiptText += `Gerant: ${register.manager_name || 'Non specifie'}\n`
@@ -127,7 +127,7 @@ export const formatClosingReceipt = (register, expenses) => {
 // Fonction pour formater un ticket de vente POS
 export const formatSaleReceipt = (sale, boutiqueInfo = {}) => {
     let receiptText = "==============================\n"
-    receiptText += `   ${(boutiqueInfo.boutiqueName || "BUTIKI").toUpperCase()}   \n`
+    receiptText += `   ${(boutiqueInfo.boutiqueName || "BUTIK").toUpperCase()}   \n`
     if (boutiqueInfo.boutiqueAddress) receiptText += `${boutiqueInfo.boutiqueAddress}\n`
     receiptText += "==============================\n\n"
     

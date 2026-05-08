@@ -127,17 +127,17 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
       )}
 
       <aside className={clsx(
-        "fixed top-0 left-0 z-50 h-screen w-48 bg-card border-r border-border flex flex-col transition-all lg:translate-x-0 lg:static",
+        "fixed top-0 left-0 z-50 h-screen w-48 bg-card border-r border-border flex flex-col transition-all lg:translate-x-0 lg:sticky lg:top-0",
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-16 items-center justify-between px-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
             {config?.logo || '/logo.png' ? (
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-1 shadow-sm overflow-hidden shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center p-1.5 shadow-sm overflow-hidden shrink-0">
                 <img 
                   src={config?.logo || '/logo.png'} 
                   alt="Logo" 
-                  className="w-full h-full object-contain mix-blend-multiply scale-110" 
+                  className="w-full h-full object-contain" 
                 />
               </div>
             ) : (
@@ -146,7 +146,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
               </div>
             )}
             <div className="flex flex-col min-w-0 group relative cursor-pointer">
-              <span className="text-[8px] font-black text-primary uppercase tracking-widest leading-none mb-0.5">Butiki</span>
+              <span className="text-[8px] font-black text-primary uppercase tracking-widest leading-none mb-0.5">Butik</span>
               <select 
                 value={activeBoutiqueId} 
                 onChange={(e) => useStore.getState().switchBoutique(e.target.value)}

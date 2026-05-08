@@ -39,7 +39,7 @@ export const useStore = create(
       }
     }),
     {
-      name: 'butiki-storage',
+      name: 'butik-storage',
       storage: createJSONStorage(() => idbStorage),
       // 🚀 P3b — Exclure audit_log et notifications de la persistence IDB
       // Ces données sont re-générées en session et n'ont pas besoin d'alourdir

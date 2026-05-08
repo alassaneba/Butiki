@@ -4,7 +4,7 @@ import { Lock, Shield, User, ChevronLeft } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { del } from 'idb-keyval'
 
-const TIMEOUT_KEY = 'butiki-last-activity'
+const TIMEOUT_KEY = 'butik-last-activity'
 
 export function useSessionTimeout() {
   const config = useStore(state => state.config)
@@ -153,7 +153,7 @@ export default function PinLock({ locked, onUnlock }) {
       setActiveUser(null)
       onUnlock()
     } catch {
-      await del('butiki-store')
+      await del('butik-store')
       window.location.reload()
     }
   }
@@ -176,7 +176,7 @@ export default function PinLock({ locked, onUnlock }) {
             className="w-full max-w-md flex flex-col items-center gap-8"
           >
             <div className="text-center space-y-2">
-              <h1 className="text-3xl font-black">Butiki</h1>
+              <h1 className="text-3xl font-black">Butik</h1>
               <p className="text-muted-foreground">Sélectionnez votre profil pour continuer</p>
             </div>
 
@@ -225,7 +225,7 @@ export default function PinLock({ locked, onUnlock }) {
                 {selectedUser ? <User size={28} className="text-primary" /> : <Lock size={28} className="text-primary" />}
               </div>
               <h1 className="text-2xl font-black">
-                {selectedUser ? selectedUser.name : 'Butiki verrouillé'}
+                {selectedUser ? selectedUser.name : 'Butik verrouillé'}
               </h1>
               <p className="text-sm text-muted-foreground">Entrez votre code PIN</p>
             </div>

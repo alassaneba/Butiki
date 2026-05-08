@@ -207,7 +207,7 @@ export default function Boutiques() {
           <form onSubmit={handleAdd} className="space-y-4 mt-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Nom du point de vente</label>
-              <input type="text" value={newBoutique.name} onChange={e => setNewBoutique({...newBoutique, name: e.target.value})} className="w-full p-3 bg-muted/20 border border-border rounded-xl text-sm font-bold focus:border-primary outline-none transition-all" placeholder="ex: Butiki - Plateau" required />
+              <input type="text" value={newBoutique.name} onChange={e => setNewBoutique({...newBoutique, name: e.target.value})} className="w-full p-3 bg-muted/20 border border-border rounded-xl text-sm font-bold focus:border-primary outline-none transition-all" placeholder="ex: Butik - Plateau" required />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Emplacement / Ville</label>

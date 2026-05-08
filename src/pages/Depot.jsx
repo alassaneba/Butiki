@@ -18,7 +18,7 @@ import { CustomAreaChart } from '../components/ui/Charts'
 export default function Depot() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const vault_balance = useStore(state => state.vault_balance || 0)
-  const allVaultTransactions = useStore(state => state.vault_transactions || [])
+  const allVaultTransactions = useStore(state => state.vault_transactions) || []
   const vault_transactions = useMemo(() => allVaultTransactions.filter(tx => tx.boutiqueId === activeBoutiqueId), [allVaultTransactions, activeBoutiqueId])
   const fintech_balances = useStore(state => state.fintech_balances || {})
   

@@ -14,7 +14,7 @@ import {
 export default function Gaz() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const suppliers = useStore(state => state.suppliers)
-  const allGasLogs = useStore(state => state.gas_logs || [])
+  const allGasLogs = useStore(state => state.gas_logs) || []
   const gas_logs = useMemo(() => allGasLogs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId), [allGasLogs, activeBoutiqueId])
   const addGasLog = useStore(state => state.addGasLog)
   const payGasLog = useStore(state => state.payGasLog)

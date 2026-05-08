@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import { 
   PiggyBank, Wallet, Smartphone, Users, Truck, 
@@ -6,6 +7,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { CustomPieChart, CustomBarChart } from '../components/ui/Charts'
+import * as XLSX from 'xlsx'
 
 const formatF = (val) => {
   const num = Number(val) || 0
@@ -98,6 +100,26 @@ export default function Treasury() {
     { name: 'Bénéfice Net', value: netProfit, color: '#10b981' },
   ]
 
+  const exportTreasuryReport = () => {
+    const data = [
+      { 'Poste financier': 'Liquidités Totales', 'Montant (F)': totalLiquidAssets },
+      { 'Poste financier': 'Valeur du Stock', 'Montant (F)': totalStockValue },
+      { 'Poste financier': 'Créances Clients', 'Montant (F)': totalClientDebts },
+      { 'Poste financier': 'Dettes Fournisseurs', 'Montant (F)': -totalSupplierDebts },
+      { 'Poste financier': 'VALEUR NETTE', 'Montant (F)': netWorth },
+      { 'Poste financier': '', 'Montant (F)': null },
+      { 'Poste financier': `Revenu Mensuel (${now.toLocaleDateString('fr-FR', { month: 'long' })})`, 'Montant (F)': monthlyRevenue },
+      { 'Poste financier': 'Coût des Ventes (COGS)', 'Montant (F)': -monthlyCOGS },
+      { 'Poste financier': 'Charges Mensuelles', 'Montant (F)': -monthlyExpenses },
+      { 'Poste financier': 'BÉNÉFICE NET', 'Montant (F)': netProfit }
+    ]
+
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Rapport Trésorerie")
+    XLSX.writeFile(wb, `Rapport_Tresorerie_Butik_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.xlsx`)
+  }
+
   return (
     <div className="space-y-8 pb-24 px-4 overflow-y-auto max-w-5xl mx-auto">
       {/* Header Premium */}
@@ -113,6 +135,9 @@ export default function Treasury() {
           <Activity size={12} className="text-primary animate-pulse" />
           <span className="text-[9px] font-black uppercase text-primary tracking-tighter">Diagnostic Haute Précision</span>
         </div>
+        <button onClick={exportTreasuryReport} className="hidden sm:flex bg-emerald-500/10 text-emerald-600 px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest items-center gap-1 hover:bg-emerald-500 hover:text-white transition-all active:scale-95 ml-2 border border-emerald-500/20">
+          Excel
+        </button>
       </header>
 
       {/* Hero Card : Patrimoine */}

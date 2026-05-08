@@ -14,7 +14,7 @@ import clsx from 'clsx'
 const formatF = (val) => `${Math.round(val || 0).toLocaleString('fr-FR')} F`
 
 export default function Catalogue() {
-  const stock = useStore(state => state.stock || [])
+  const stock = useStore(state => state.stock) || []
   const config = useStore(state => state.config)
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   
@@ -99,7 +99,7 @@ export default function Catalogue() {
 
   const handleShare = () => {
     const shareData = {
-      title: config?.boutiqueName || 'Butiki',
+      title: config?.boutiqueName || 'Butik',
       text: `Découvrez le catalogue digital de ${config?.boutiqueName || 'notre boutique'} ! 🛍️`,
       url: window.location.href,
     }
@@ -129,7 +129,7 @@ export default function Catalogue() {
             <ShoppingBag size={18} />
           </motion.div>
           <div>
-            <h1 className="font-black text-base sm:text-lg tracking-tighter uppercase leading-none">{config?.boutiqueName || 'Butiki'}</h1>
+            <h1 className="font-black text-base sm:text-lg tracking-tighter uppercase leading-none">{config?.boutiqueName || 'Butik'}</h1>
             <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
               <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Menu Digital
             </p>
