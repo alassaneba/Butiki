@@ -3,12 +3,13 @@ import { useStore } from '../store/useStore'
 import { 
   TrendingUp, Users, Package, ShoppingCart, 
   ArrowUpRight, ArrowDownRight, Calendar,
-  ChevronRight, Activity, Database, Cloud
+  ChevronRight, Activity, Database, Cloud, Star, Trophy
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import SmartAdvisor from '../components/SmartAdvisor'
 import { CustomAreaChart } from '../components/ui/Charts'
+import { getLoyaltyLevel } from '../lib/crm'
 import clsx from 'clsx'
 
 function StatCard({ title, value, sub, icon: Icon, color, trend, trendValue, delay = 0, extra }) {
@@ -137,6 +138,52 @@ function ModuleSyncStatus() {
   )
 }
 
+function LoyaltyWidget() {
+  const allClients = useStore(state => state.clients) || []
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
+  
+  const topClients = useMemo(() => {
+    return allClients
+      .filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId && c.loyalty_points > 0)
+      .sort((a, b) => (b.loyalty_points || 0) - (a.loyalty_points || 0))
+      .slice(0, 3)
+  }, [allClients, activeBoutiqueId])
+
+  if (topClients.length === 0) return null
+
+  return (
+    <div className="card-ultra-compact border border-border/50 bg-amber-500/5 backdrop-blur-md">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-600 flex items-center gap-2">
+          <Trophy size={12} /> Top Ambassadeurs
+        </h3>
+        <Star size={12} className="text-amber-500 fill-current animate-pulse" />
+      </div>
+      <div className="space-y-3">
+        {topClients.map(client => {
+          const level = getLoyaltyLevel(client.loyalty_points)
+          return (
+            <div key={client.id} className="flex items-center justify-between group">
+              <div className="flex items-center gap-2">
+                <div className={clsx("w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black", level.bg, level.color)}>
+                  {client.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase leading-tight truncate w-24">{client.name}</p>
+                  <p className={clsx("text-[7px] font-black uppercase tracking-widest", level.color)}>{level.name}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-black text-amber-600 tracking-tighter">{client.loyalty_points} pts</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
@@ -144,13 +191,14 @@ export default function Dashboard() {
   const allSales = useStore(state => state.sales) || []
   const allExpenses = useStore(state => state.expenses) || []
   const allStock = useStore(state => state.stock) || []
-  const clients = useStore(state => state.clients) 
+  const allClients = useStore(state => state.clients) || []
   const config = useStore(state => state.config)
 
   const daily_cash_register = useMemo(() => all_daily_cash_register.filter(r => (r.boutiqueId || 'b1') === activeBoutiqueId), [all_daily_cash_register, activeBoutiqueId])
   const sales = useMemo(() => allSales.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSales, activeBoutiqueId])
   const expenses = useMemo(() => allExpenses.filter(e => (e.boutiqueId || 'b1') === activeBoutiqueId), [allExpenses, activeBoutiqueId])
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
+  const clients = useMemo(() => allClients.filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId), [allClients, activeBoutiqueId])
 
   // -- Calculs Stat --
   const stats = useMemo(() => {
@@ -385,6 +433,7 @@ export default function Dashboard() {
         {/* Sidebar Widgets */}
         <div className="space-y-6">
           <ModuleSyncStatus />
+          <LoyaltyWidget />
           <SmartAdvisor />
           <SystemHealth />
         </div>

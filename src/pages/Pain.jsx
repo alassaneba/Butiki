@@ -13,7 +13,8 @@ import {
 
 export default function Pain() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const suppliers = useStore(state => state.suppliers)
+  const allSuppliers = useStore(state => state.suppliers) || []
+  const suppliers = useMemo(() => allSuppliers.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSuppliers, activeBoutiqueId])
   const allBreadLogs = useStore(state => state.bread_logs) || []
   const bread_logs = useMemo(() => allBreadLogs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId), [allBreadLogs, activeBoutiqueId])
   const addOrUpdateBreadLog = useStore(state => state.addOrUpdateBreadLog)
@@ -291,7 +292,7 @@ export default function Pain() {
               <div className="text-xs font-bold text-muted-foreground bg-muted/30 p-4 rounded-xl border border-border/50 text-center">
                 <p className="mb-3">Aucun fournisseur de pain trouvé.</p>
                 <button 
-                  onClick={() => addSupplier({ name: 'Boulangerie Centrale', category: 'pain' })}
+                  onClick={() => addSupplier({ name: 'Boulangerie Centrale', category: 'pain', boutiqueId: activeBoutiqueId })}
                   className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-all active:scale-95 shadow-sm"
                 >
                   Créer un fournisseur démo

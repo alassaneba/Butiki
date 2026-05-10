@@ -1,19 +1,24 @@
 import { useState, useMemo, useRef } from 'react'
 import { Plus, PackageSearch, ImagePlus, X } from 'lucide-react'
 import { useStore } from '../../store/useStore'
+import { toast } from 'sonner'
 
-export default function ProductForm({ onSuccess }) {
+export default function ProductForm({ onSuccess, initialData = null }) {
   const addStockItem = useStore(state => state.addStockItem)
+  const updateStockItem = useStore(state => state.updateStockItem)
+  const suppliers = useStore(state => state.suppliers)
 
-  const [name, setName] = useState('')
-  const [typeProduit, setTypeProduit] = useState('')
-  const [numTypes, setNumTypes] = useState('')
-  const [qtyPerType, setQtyPerType] = useState('')
-  const [priceBuyPerType, setPriceBuyPerType] = useState('')
-  const [thresholdUnit, setThresholdUnit] = useState('10')
-  const [priceSellUnit, setPriceSellUnit] = useState('')
-  const [expiryDate, setExpiryDate] = useState('')
-  const [imageBase64, setImageBase64] = useState(null)
+  const [name, setName] = useState(initialData?.name || '')
+  const [typeProduit, setTypeProduit] = useState(initialData?.category || '')
+  const [numTypes, setNumTypes] = useState(initialData?.num_types || '')
+  const [qtyPerType, setQtyPerType] = useState(initialData?.qty_per_type || '')
+  const [priceBuyPerType, setPriceBuyPerType] = useState(initialData?.price_buy * (initialData?.qty_per_type || 1) || '')
+  const [thresholdUnit, setThresholdUnit] = useState(initialData?.alert_threshold?.toString() || '10')
+  const [priceSellUnit, setPriceSellUnit] = useState(initialData?.price_sell || '')
+  const [expiryDate, setExpiryDate] = useState(initialData?.expiry_date || '')
+  const [supplierId, setSupplierId] = useState(initialData?.supplierId || '')
+  const [barcode, setBarcode] = useState(initialData?.barcode || '')
+  const [imageBase64, setImageBase64] = useState(initialData?.image || null)
   
   const fileInputRef = useRef(null)
 
@@ -35,26 +40,52 @@ export default function ProductForm({ onSuccess }) {
 
   const handleAddItem = (e) => {
     e.preventDefault()
-    if (!name) return
-    addStockItem({ 
-      name, 
-      category: typeProduit,
-      qty_per_type: Number(qtyPerType) || 1,
-      current_stock: totalUnits,
-      alert_threshold: Number(thresholdUnit) || 10, 
-      price_buy: priceBuyUnit,
-      price_sell: Number(priceSellUnit) || 0,
-      expiry_date: expiryDate,
-      image: imageBase64
-    })
-    setName(''); setTypeProduit(''); setNumTypes(''); setQtyPerType(''); setPriceBuyPerType(''); setThresholdUnit('10'); setPriceSellUnit(''); setExpiryDate(''); setImageBase64(null)
+    if (!name || !typeProduit || !qtyPerType || !priceBuyPerType || !numTypes) {
+      toast.error("Veuillez remplir tous les champs obligatoires")
+      return
+    }
+
+    if (initialData) {
+      updateStockItem(initialData.id, {
+        name,
+        category: typeProduit,
+        qty_per_type: Number(qtyPerType) || 1,
+        alert_threshold: Number(thresholdUnit) || 10,
+        price_buy: priceBuyUnit,
+        price_sell: Number(priceSellUnit) || 0,
+        expiry_date: expiryDate,
+        barcode: barcode || '',
+        supplierId: supplierId || null,
+        image: imageBase64
+      })
+    } else {
+      addStockItem({ 
+        name, 
+        category: typeProduit,
+        qty_per_type: Number(qtyPerType) || 1,
+        num_types: Number(numTypes) || 1,
+        current_stock: totalUnits,
+        alert_threshold: Number(thresholdUnit) || 10, 
+        price_buy: priceBuyUnit,
+        price_sell: Number(priceSellUnit) || 0,
+        expiry_date: expiryDate,
+        barcode: barcode || '',
+        supplierId: supplierId || null,
+        image: imageBase64
+      })
+    }
+    
+    // Reset form
+    setName(''); setTypeProduit(''); setNumTypes(''); setQtyPerType(''); setPriceBuyPerType(''); 
+    setThresholdUnit('10'); setPriceSellUnit(''); setExpiryDate(''); setBarcode(''); setSupplierId(''); setImageBase64(null)
+    
     if (onSuccess) onSuccess()
   }
 
   return (
     <div className="p-6 bg-card sm:rounded-2xl sm:border border-border/40 sm:shadow-sm">
       <h3 className="flex items-center gap-2 font-black mb-6 text-sm uppercase tracking-wider">
-        <PackageSearch size={18} className="text-primary"/> Nouveau Produit
+        <PackageSearch size={18} className="text-primary"/> {initialData ? 'Modifier Produit' : 'Nouveau Produit'}
       </h3>
       <form onSubmit={handleAddItem} className="space-y-5">
         <div className="flex gap-4 items-start">
@@ -141,13 +172,33 @@ export default function ProductForm({ onSuccess }) {
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest ml-1">Validité / Péremption</label>
+            <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="w-full p-3 border border-border/40 rounded-xl bg-background text-[11px] font-black focus:ring-4 ring-primary/5 focus:border-primary/40 outline-none transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-[8px] font-black uppercase text-blue-500/80 tracking-widest ml-1">Fournisseur</label>
+            <select 
+              value={supplierId} 
+              onChange={e => setSupplierId(e.target.value)} 
+              className="w-full p-3 border border-border/40 rounded-xl bg-background text-[11px] font-black focus:ring-4 ring-blue-500/5 focus:border-blue-500/40 outline-none transition-all appearance-none cursor-pointer"
+            >
+              <option value="">Sélectionner</option>
+              {suppliers.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="space-y-1.5">
-          <label className="block text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest ml-1">Validité / Péremption</label>
-          <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="w-full p-3 border border-border/40 rounded-xl bg-background text-[11px] font-black focus:ring-4 ring-primary/5 focus:border-primary/40 outline-none transition-all" />
+          <label className="block text-[8px] font-black uppercase text-blue-500/80 tracking-widest ml-1">Code-barres / SKU</label>
+          <input type="text" value={barcode} onChange={e => setBarcode(e.target.value)} className="w-full p-3 border border-border/40 rounded-xl bg-background text-[11px] font-black focus:ring-4 ring-blue-500/5 focus:border-blue-500/40 outline-none transition-all" placeholder="Optionnel" />
         </div>
 
         <button type="submit" className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:opacity-95 flex justify-center items-center gap-2 mt-4 shadow-lg shadow-primary/20 active:scale-95 transition-all">
-          <Plus size={16} strokeWidth={3} /> Ajouter au Catalogue
+          <Plus size={16} strokeWidth={3} /> {initialData ? 'Enregistrer les modifications' : 'Ajouter au Catalogue'}
         </button>
       </form>
     </div>

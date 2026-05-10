@@ -330,10 +330,10 @@ export default function Settings() {
                    <div className="flex flex-col items-center gap-6 py-4">
                       <div 
                         onClick={() => logoInputRef.current.click()}
-                        className="w-32 h-32 rounded-[32px] border-4 border-dashed border-primary/30 flex items-center justify-center cursor-pointer hover:border-primary transition-all relative overflow-hidden group bg-primary shadow-lg shadow-primary/20"
+                        className="w-32 h-32 rounded-[32px] border-4 border-dashed border-primary/30 flex items-center justify-center cursor-pointer hover:border-primary transition-all relative overflow-hidden group bg-transparent shadow-sm"
                       >
                         {form.boutique.logo ? (
-                          <img src={form.boutique.logo} className="w-full h-full object-contain p-4" alt="Logo" />
+                          <img src={form.boutique.logo} className="w-full h-full object-contain p-0" alt="Logo" />
                         ) : (
                           <ImageIcon size={32} className="text-muted-foreground opacity-20" />
                         )}

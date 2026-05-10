@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore'
 import { 
   Search, ShoppingCart, Mic, Printer, List, LayoutGrid, Plus, Minus, X, CheckCircle2,
   Trash2, User, UserPlus, History, CreditCard, Wallet, Smartphone, ArrowRight,
-  Eye, RotateCcw, Calendar, Filter, ChevronRight, Package, Info, MoreVertical, Clock, AlertTriangle, ScanLine, Share2
+  Eye, RotateCcw, Calendar, Filter, ChevronRight, Package, Info, MoreVertical, Clock, AlertTriangle, ScanLine, Share2, Star
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import clsx from 'clsx'
@@ -42,7 +42,8 @@ export default function Ventes() {
   const allSales = useStore(state => state.sales) || []
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
   const sales = useMemo(() => allSales.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSales, activeBoutiqueId])
-  const clients = useStore(state => state.clients)
+  const allClients = useStore(state => state.clients) || []
+  const clients = useMemo(() => allClients.filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId), [allClients, activeBoutiqueId])
   const config = useStore(state => state.config)
   const addSale = useStore(state => state.addSale)
   const cancelSale = useStore(state => state.cancelSale)
@@ -128,7 +129,7 @@ export default function Ventes() {
 
   const filteredSales = useMemo(() => {
     const sList = sales || []
-    const cList = clients || []
+    const cList = clients
     return sList.filter(s => {
       const client = cList.find(c => c.id === s.clientId)?.name || ''
       const search = (ui.historySearch || '').toLowerCase()
@@ -213,7 +214,8 @@ export default function Ventes() {
         totalAmount, 
         payments: paymentsArray,
         clientId: terminal.selectedClientId || null, 
-        date: new Date().toISOString() 
+        date: new Date().toISOString(),
+        boutiqueId: activeBoutiqueId
       }
       
       const saleId = await addSale(saleData)
@@ -252,7 +254,7 @@ export default function Ventes() {
 
   const handleCreateQuickClient = (e) => {
     e.preventDefault(); if (!newClient.name) return
-    addClient({ name: newClient.name, phone: newClient.phone, total_debt: 0 })
+    addClient({ name: newClient.name, phone: newClient.phone, total_debt: 0, boutiqueId: activeBoutiqueId })
     updateNewClient({ name: '', phone: '' }); updateUi({ showNewClientDialog: false })
   }
 
@@ -288,6 +290,11 @@ export default function Ventes() {
     const client = clients.find(c => c.id === sale.clientId)
     const phone = client?.phone || ''
     
+    // Calcul de la fidélité pour le message
+    const ratio = config?.prices?.loyalty?.ratio || 100
+    const pointsGained = Math.floor(sale.totalAmount / ratio)
+    const totalPoints = (client?.loyalty_points || 0)
+    
     let message = `*REÇU BUTIK - #${sale.id.slice(0, 8).toUpperCase()}*\n`
     message += `Date: ${formatDate(sale.date)} ${formatTime(sale.date)}\n`
     message += `Client: ${client?.name || 'Vente Comptant'}\n`
@@ -298,6 +305,13 @@ export default function Ventes() {
     message += `--------------------------\n`
     if (sale.discountAmount > 0) message += `Remise: -${formatF(sale.discountAmount)}\n`
     message += `*TOTAL: ${formatF(sale.totalAmount)}*\n\n`
+    
+    if (client) {
+      message += `⭐ *FIDÉLITÉ*\n`
+      message += `Points gagnés: +${pointsGained}\n`
+      message += `Nouveau solde: ${totalPoints} points\n\n`
+    }
+
     message += `_Merci de votre confiance !_\n`
     message += `Butik ERP - Gestion Intelligente`
 
@@ -587,16 +601,44 @@ export default function Ventes() {
             )}
 
             <div className="space-y-3">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-muted-foreground ml-1 tracking-widest">Client</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-                  <select value={terminal.selectedClientId} onChange={e => updateTerminal({ selectedClientId: e.target.value })} className="w-full pl-9 p-3 bg-muted/10 border border-border rounded-2xl text-[10px] font-black uppercase outline-none">
-                    <option value="">Client (Optionnel)</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={16} />
+                  <select 
+                    value={terminal.selectedClientId} 
+                    onChange={e => updateTerminal({ selectedClientId: e.target.value })} 
+                    className="w-full pl-10 pr-10 py-3 bg-muted/20 border border-border rounded-2xl text-xs font-black uppercase outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                  >
+                    <option value="">{clients.length === 0 ? 'Aucun client (Vente Comptant)' : 'Sélectionner un client'}</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.phone ? `(${c.phone})` : ''}
+                      </option>
+                    ))}
                   </select>
+                  <button 
+                    type="button"
+                    onClick={() => updateUi({ showNewClientDialog: true })} 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors"
+                    title="Ajouter un nouveau client"
+                  >
+                    <UserPlus size={18} />
+                  </button>
                 </div>
-                <input type="number" value={terminal.discountAmount || ''} onChange={e => updateTerminal({ discountAmount: Number(e.target.value), pointsUsed: 0 })} placeholder="Remise" className="w-24 p-3 bg-muted/30 border border-border rounded-xl text-xs font-black outline-none" />
+                <div className="relative w-32">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-muted-foreground">OFF</span>
+                  <input 
+                    type="number" 
+                    value={terminal.discountAmount || ''} 
+                    onChange={e => updateTerminal({ discountAmount: Number(e.target.value), pointsUsed: 0 })} 
+                    placeholder="0" 
+                    className="w-full pl-10 p-3 bg-muted/30 border border-border rounded-xl text-xs font-black outline-none focus:border-primary transition-all text-right" 
+                  />
+                </div>
               </div>
+            </div>
               {terminal.selectedClientId && (() => {
                 const client = clients.find(c => c.id === terminal.selectedClientId)
                 const pts = client?.loyalty_points || 0

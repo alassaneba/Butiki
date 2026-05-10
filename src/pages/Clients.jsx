@@ -5,11 +5,12 @@ import {
   Plus, Search, Printer, Eye, X,
   MessageCircle, Phone, Star, UserCheck, TriangleAlert, UserPlus,
   CheckCircle2, Users, History, CreditCard, Receipt, Package, Pencil,
-  Diamond, Clock
+  Diamond, Clock, Trophy, TrendingUp
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import TransactionHistoryModal from '../components/people/TransactionHistoryModal'
+import { getLoyaltyLevel, getNextLevelProgress, getClientSegment, getMarketingMessage } from '../lib/crm'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -18,6 +19,7 @@ import {
   ResponsiveDialogDescription
 } from '../components/ui/responsive-dialog'
 import * as XLSX from 'xlsx'
+import clsx from 'clsx'
 
 // ─── Tags de segmentation ─────────────────────────────────────────────────────
 // ─── Tags de segmentation ─────────────────────────────────────────────────────
@@ -40,17 +42,106 @@ function TagBadge({ tag }) {
 }
 
 
+// ─── Marketing Relance Dialog ────────────────────────────────────────────────
+function MarketingRelanceDialog({ isOpen, onClose, clients }) {
+  const [activeSegment, setActiveSegment] = useState('inactive');
+  
+  const segments = [
+    { id: 'inactive', name: 'Inactifs', icon: '⏳', color: 'text-orange-600', bg: 'bg-orange-500/10' },
+    { id: 'lost', name: 'Perdus', icon: '🥀', color: 'text-red-600', bg: 'bg-red-500/10' },
+    { id: 'potential', name: 'Potentiels', icon: '📈', color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+    { id: 'champion', name: 'Champions', icon: '🏆', color: 'text-blue-600', bg: 'bg-blue-500/10' },
+  ];
+
+  const filtered = useMemo(() => {
+    return clients.filter(c => getClientSegment(c).id === activeSegment);
+  }, [clients, activeSegment]);
+
+  return (
+    <ResponsiveDialog open={isOpen} onOpenChange={onClose}>
+      <ResponsiveDialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col h-[85vh] sm:h-[75vh] rounded-t-[2rem] sm:rounded-[2rem] border-none">
+        <div className="p-6 bg-muted/20 border-b border-border/50">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-black tracking-tighter uppercase">Assistant Marketing</h2>
+              <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1">Ciblage et Relance Client</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-muted rounded-xl transition-colors"><X size={20}/></button>
+          </div>
+
+          <div className="flex gap-2 p-1 bg-background border border-border rounded-2xl overflow-x-auto no-scrollbar">
+            {segments.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setActiveSegment(s.id)}
+                className={clsx(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0",
+                  activeSegment === s.id ? `${s.bg} ${s.color} shadow-sm border border-current/20` : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                <span>{s.icon}</span> {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-background/50">
+          {filtered.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center opacity-20 py-20 text-center">
+              <TrendingUp size={48} className="mb-4" />
+              <p className="font-black uppercase text-xs tracking-widest">Aucun client dans ce segment</p>
+            </div>
+          ) : (
+            filtered.map(client => (
+              <div key={client.id} className="p-4 rounded-3xl bg-card border border-border/50 flex items-center justify-between group hover:border-primary/30 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center font-black text-xs uppercase">
+                    {client.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-black text-sm uppercase leading-tight">{client.name}</h4>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase">{client.loyalty_points || 0} Points • {client.phone || 'Pas de tel'}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    const msg = getMarketingMessage(activeSegment, client.name, client.loyalty_points || 0);
+                    const url = `https://wa.me/${client.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+                    window.open(url, '_blank');
+                  }}
+                  disabled={!client.phone}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 disabled:opacity-30 transition-all shadow-lg shadow-emerald-500/20"
+                >
+                  <MessageCircle size={14} /> Relancer
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+        
+        <div className="p-4 bg-muted/10 border-t border-border/50 text-center">
+           <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest italic">
+             💡 Astuce : Les messages de relance sont personnalisés selon le profil du client.
+           </p>
+        </div>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
+  );
+}
+
 export default function Clients() {
   const clients = useStore(state => state.clients)
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const sales = useStore(state => state.sales)
-  const clientList = clients || []
-  const saleList = sales || []
+  const clientList = useMemo(() => (clients || []).filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId), [clients, activeBoutiqueId])
+  const saleList = useMemo(() => (sales || []).filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [sales, activeBoutiqueId])
   const addClient = useStore(state => state.addClient)
   const addDebt = useStore(state => state.addDebt)
   const payDebt = useStore(state => state.payDebt)
 
   const [ui, setUi] = useState({
     isNewClientOpen: false,
+    isMarketingOpen: false,
     activeClient: null,
     detailClient: null,
     printData: null
@@ -87,7 +178,8 @@ export default function Clients() {
       tag: form.tag,
       total_debt: Number(form.initialDebt) || 0, 
       libelle_initial: form.initialLibelle || 'Solde initial', 
-      credit_limit: Number(form.creditLimit) || 0 
+      credit_limit: Number(form.creditLimit) || 0,
+      boutiqueId: activeBoutiqueId
     })
     setForm({ ...form, name: '', phone: '', tag: 'regulier', initialDebt: '', initialLibelle: '', creditLimit: '' })
     updateUi({ isNewClientOpen: false })
@@ -243,6 +335,12 @@ export default function Clients() {
             <Printer size={16} /> Exporter
           </button>
           <button 
+            onClick={() => updateUi({ isMarketingOpen: true })}
+            className="bg-amber-500/10 text-amber-600 px-3 py-2 rounded-xl font-black text-xs flex items-center gap-2 hover:bg-amber-500 hover:text-white transition-all shadow-sm active:scale-95 whitespace-nowrap justify-center"
+          >
+            <Trophy size={16} /> Relance CRM
+          </button>
+          <button 
             onClick={() => updateUi({ isNewClientOpen: true })}
             className="bg-primary text-white px-4 py-2 rounded-xl font-black text-xs flex items-center gap-2 hover:bg-primary/90 transition-all shadow-md active:scale-95 whitespace-nowrap flex-1 sm:flex-none justify-center"
           >
@@ -303,6 +401,11 @@ export default function Clients() {
           {filteredClients.map((client) => {
             const limit = client.credit_limit || 0
             const ratio = limit > 0 ? ((client.total_debt || 0) / limit) * 100 : 0
+            
+            // CRM Data
+            const level = getLoyaltyLevel(client.loyalty_points || 0)
+            const next = getNextLevelProgress(client.loyalty_points || 0)
+
             return (
               <motion.div 
                 key={client.id}
@@ -312,14 +415,19 @@ export default function Clients() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className={`card-ultra-compact flex flex-col gap-2 relative overflow-hidden transition-all ${limit > 0 && ratio >= 80 ? 'border-orange-500/30 bg-orange-500/5' : 'border-border/50 bg-card hover:shadow-md'}`}
               >
+                {/* Level Badge Overlay */}
+                <div className={clsx("absolute top-0 right-0 px-3 py-1 rounded-bl-2xl text-[7px] font-black uppercase tracking-widest flex items-center gap-1", level.bg, level.color)}>
+                  {level.icon} {level.name}
+                </div>
+
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-black text-primary shrink-0">
+                    <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 shadow-sm", level.bg, level.color)}>
                       {client.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <h4 className="font-black text-sm tracking-tight truncate uppercase leading-none">{client.name}</h4>
+                        <h4 className="font-black text-sm tracking-tight truncate uppercase leading-none pr-12">{client.name}</h4>
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleCycleTag(client); }} 
                           className="hover:scale-105 active:scale-95 transition-all outline-none"
@@ -327,11 +435,6 @@ export default function Clients() {
                         >
                           <TagBadge tag={client.tag} />
                         </button>
-                        {client.loyalty_points > 0 && (
-                          <div className="bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-md text-[8px] font-black flex items-center gap-1 uppercase">
-                             <Star size={8} fill="currentColor" /> {client.loyalty_points}
-                          </div>
-                        )}
                         {client.isInactive && (
                           <div className="bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md text-[8px] font-black flex items-center gap-1 uppercase animate-pulse">
                              <Clock size={8} /> Inactif
@@ -361,22 +464,43 @@ export default function Clients() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[8px] font-black uppercase text-muted-foreground/60 mb-0.5">Activité</p>
+                  <div className="text-right shrink-0 pt-4">
                     <div className="flex flex-col items-end">
-                      <p className={`text-sm font-black tracking-tighter ${client.total_debt > 0 ? 'text-red-500' : client.total_debt < 0 ? 'text-emerald-500' : 'text-foreground'}`}>
+                      <p className={`text-base font-black tracking-tighter ${client.total_debt > 0 ? 'text-red-500' : client.total_debt < 0 ? 'text-emerald-500' : 'text-foreground'}`}>
                         {Math.abs(client.total_debt || 0).toLocaleString()} F
                       </p>
-                      <p className="text-[8px] font-bold text-muted-foreground/40 uppercase mt-0.5">Total: {client.totalRevenue?.toLocaleString()} F</p>
+                      <p className="text-[8px] font-bold text-muted-foreground/40 uppercase">Dette actuelle</p>
                     </div>
                   </div>
                 </div>
 
+                {/* Loyalty Progress Bar */}
+                <div className="mt-1 bg-muted/30 p-2 rounded-xl border border-border/40">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[8px] font-black uppercase text-muted-foreground flex items-center gap-1">
+                      <Star size={8} className="text-amber-500" fill="currentColor"/> 
+                      {client.loyalty_points || 0} Points
+                    </span>
+                    {next.next && (
+                      <span className="text-[7px] font-bold text-muted-foreground italic">
+                        +{next.remaining} pts vers {next.next.name}
+                      </span>
+                    )}
+                  </div>
+                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${next.progress}%` }}
+                      className={clsx("h-full", next.next ? "bg-amber-500" : "bg-blue-600")}
+                    />
+                  </div>
+                </div>
+
                 {limit > 0 && (
-                  <div className="space-y-1">
+                  <div className="space-y-1 mt-1">
                     <div className="flex justify-between text-[7px] font-black uppercase text-muted-foreground/60">
-                      <span>Crédit {Math.round(ratio)}%</span>
-                      <span>Max: {limit.toLocaleString()}</span>
+                      <span>Utilisation Crédit {Math.round(ratio)}%</span>
+                      <span>Limite: {limit.toLocaleString()} F</span>
                     </div>
                     <div className="h-0.5 bg-muted rounded-full overflow-hidden">
                       <div style={{ width: `${Math.min(100, ratio)}%` }} className={`h-full ${ratio >= 100 ? 'bg-red-500' : ratio >= 80 ? 'bg-orange-500' : 'bg-primary'}`}/>
@@ -393,8 +517,8 @@ export default function Clients() {
 
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1 flex-wrap">
                   <div className="flex gap-1">
-                    <button onClick={() => updateUi({ detailClient: client })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all"><History size={12} /></button>
-                    <button onClick={() => updateUi({ activeClient: { type: 'note', ...client } })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all"><Package size={12} /></button>
+                    <button onClick={() => updateUi({ detailClient: client })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all" title="Historique & Fidélité"><History size={12} /></button>
+                    <button onClick={() => updateUi({ activeClient: { type: 'note', ...client } })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all" title="Notes marchandise"><Package size={12} /></button>
                   </div>
                   <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
                     {client.phone && <button onClick={() => handleWhatsAppRelance(client)} className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><MessageCircle size={14} /></button>}
@@ -591,6 +715,13 @@ export default function Clients() {
           </div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>
+
+      {/* Marketing */}
+      <MarketingRelanceDialog 
+        isOpen={ui.isMarketingOpen} 
+        onClose={() => updateUi({ isMarketingOpen: false })} 
+        clients={clientList} 
+      />
 
       {/* Détails */}
       {ui.detailClient && <TransactionHistoryModal person={clients.find(c => c.id === ui.detailClient.id) || ui.detailClient} onClose={() => updateUi({ detailClient: null })} />}

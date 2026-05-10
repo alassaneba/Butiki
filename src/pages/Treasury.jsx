@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import { 
   PiggyBank, Wallet, Smartphone, Users, Truck, 
@@ -15,29 +15,51 @@ const formatF = (val) => {
 }
 
 export default function Treasury() {
-  const sales = useStore(state => state.sales)
-  const expenses = useStore(state => state.expenses)
-  const stock = useStore(state => state.stock)
-  const clients = useStore(state => state.clients)
-  const finance = useStore(state => state.finance)
-  const config = useStore(state => state.config)
-  const fournisseurs = useStore(state => state.fournisseurs)
-
-  const saleList = sales || []
-  const expenseList = expenses || []
-  const stockList = stock || []
-  const clientList = clients || []
-  const financeState = finance || { cashInRegister: 0, vault_balance: 0 }
-  const configState = config || {}
-  const fournisseurList = fournisseurs || []
-
-  const cashInRegister = financeState.cashInRegister || 0
-  const vault_balance = financeState.vault_balance || 0
+  const [isConsolidated, setIsConsolidated] = useState(false)
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
+  const allSales = useStore(state => state.sales) || []
+  const allExpenses = useStore(state => state.expenses) || []
+  const allStock = useStore(state => state.stock) || []
+  const allClients = useStore(state => state.clients) || []
+  const allFournisseurs = useStore(state => state.fournisseurs) || []
+  const vault_balances = useStore(state => state.vault_balances) || {}
+  const fintech_balances = useStore(state => state.fintech_balances) || {}
   
-  const totalFintech = (configState.fintech_providers || []).reduce((acc, p) => acc + (p.balance || 0), 0)
-  const totalStockValue = stockList.reduce((acc, item) => acc + (Number(item.current_stock) * Number(item.price_buy)), 0)
-  const totalClientDebts = clientList.reduce((acc, c) => acc + (Number(c.total_debt) || 0), 0)
-  const totalSupplierDebts = fournisseurList.reduce((acc, f) => acc + (Number(f.total_debt) || 0), 0)
+  const saleList = useMemo(() => isConsolidated ? allSales : allSales.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSales, activeBoutiqueId, isConsolidated])
+  const expenseList = useMemo(() => isConsolidated ? allExpenses : allExpenses.filter(e => (e.boutiqueId || 'b1') === activeBoutiqueId), [allExpenses, activeBoutiqueId, isConsolidated])
+  const stockList = useMemo(() => isConsolidated ? allStock : allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId, isConsolidated])
+  const clientList = useMemo(() => isConsolidated ? allClients : allClients.filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId), [allClients, activeBoutiqueId, isConsolidated])
+  const fournisseurList = useMemo(() => isConsolidated ? allFournisseurs : allFournisseurs.filter(f => (f.boutiqueId || 'b1') === activeBoutiqueId), [allFournisseurs, activeBoutiqueId, isConsolidated])
+
+  const vault_balance = useMemo(() => {
+    if (isConsolidated) return Object.values(vault_balances).reduce((acc, v) => acc + (v || 0), 0)
+    return vault_balances[activeBoutiqueId] || 0
+  }, [vault_balances, activeBoutiqueId, isConsolidated])
+
+  const totalFintech = useMemo(() => {
+    if (isConsolidated) {
+      return Object.values(fintech_balances).reduce((acc, b) => acc + (b.wave || 0) + (b.orange || 0), 0)
+    }
+    const currentFintech = fintech_balances[activeBoutiqueId] || { wave: 0, orange: 0 }
+    return (currentFintech.wave || 0) + (currentFintech.orange || 0)
+  }, [fintech_balances, activeBoutiqueId, isConsolidated])
+  
+  // Note: cashInRegister logic depends on daily_cash_register which is filtered in other components
+  // For Treasury, we might want to sum current active registers if any, but usually it's vault + fintech + assets
+  const daily_cash_register = useStore(state => state.daily_cash_register) || []
+  const cashInRegister = useMemo(() => {
+    if (isConsolidated) {
+       return daily_cash_register
+         .filter(r => r.closing_balance === null)
+         .reduce((acc, r) => acc + (r.opening_balance + (r.calculated_sales || 0)), 0)
+    }
+    const activeReg = daily_cash_register.find(r => (r.boutiqueId || 'b1') === activeBoutiqueId && r.closing_balance === null)
+    return activeReg ? (activeReg.opening_balance + (activeReg.calculated_sales || 0)) : 0
+  }, [daily_cash_register, activeBoutiqueId, isConsolidated])
+
+  const totalStockValue = useMemo(() => stockList.reduce((acc, item) => acc + (Number(item.current_stock) * Number(item.price_buy)), 0), [stockList])
+  const totalClientDebts = useMemo(() => clientList.reduce((acc, c) => acc + (Number(c.total_debt) || 0), 0), [clientList])
+  const totalSupplierDebts = useMemo(() => fournisseurList.reduce((acc, f) => acc + (Number(f.total_debt) || 0), 0), [fournisseurList])
 
   const totalAssets = cashInRegister + vault_balance + totalFintech + totalStockValue + totalClientDebts
   const totalLiquidAssets = cashInRegister + vault_balance + totalFintech
@@ -100,23 +122,79 @@ export default function Treasury() {
     { name: 'Bénéfice Net', value: netProfit, color: '#10b981' },
   ]
 
+  const boutiques = useStore(state => state.boutiques) || []
+  const boutiqueStats = useMemo(() => {
+    if (!isConsolidated) return []
+    return boutiques.map(b => {
+      const bSales = allSales.filter(s => (s.boutiqueId || 'b1') === b.id && s.status !== 'cancelled')
+      const bExpenses = allExpenses.filter(e => (e.boutiqueId || 'b1') === b.id)
+      const bStock = allStock.filter(s => (s.boutiqueId || 'b1') === b.id)
+      
+      const revenue = bSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0)
+      const expenses = bExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0)
+      const stockValue = bStock.reduce((acc, s) => acc + (Number(s.current_stock) * Number(s.price_buy)), 0)
+      
+      const cogs = bSales.reduce((acc, s) => {
+        const saleCost = (s.items || []).reduce((iAcc, item) => {
+          const product = bStock.find(p => p.id === item.productId)
+          return iAcc + (item.quantity * (product?.price_buy || 0))
+        }, 0)
+        return acc + saleCost
+      }, 0)
+
+      const gross = revenue - cogs
+      const net = gross - expenses
+
+      return {
+        id: b.id,
+        name: b.name,
+        color: b.color || 'blue',
+        revenue,
+        expenses,
+        net,
+        stockValue,
+        margin: revenue > 0 ? (gross / revenue) * 100 : 0
+      }
+    })
+  }, [isConsolidated, boutiques, allSales, allExpenses, allStock])
+
   const exportTreasuryReport = () => {
-    const data = [
+    const wb = XLSX.utils.book_new()
+    
+    // Résumé Global
+    const globalData = [
       { 'Poste financier': 'Liquidités Totales', 'Montant (F)': totalLiquidAssets },
       { 'Poste financier': 'Valeur du Stock', 'Montant (F)': totalStockValue },
       { 'Poste financier': 'Créances Clients', 'Montant (F)': totalClientDebts },
       { 'Poste financier': 'Dettes Fournisseurs', 'Montant (F)': -totalSupplierDebts },
       { 'Poste financier': 'VALEUR NETTE', 'Montant (F)': netWorth },
-      { 'Poste financier': '', 'Montant (F)': null },
-      { 'Poste financier': `Revenu Mensuel (${now.toLocaleDateString('fr-FR', { month: 'long' })})`, 'Montant (F)': monthlyRevenue },
-      { 'Poste financier': 'Coût des Ventes (COGS)', 'Montant (F)': -monthlyCOGS },
-      { 'Poste financier': 'Charges Mensuelles', 'Montant (F)': -monthlyExpenses },
-      { 'Poste financier': 'BÉNÉFICE NET', 'Montant (F)': netProfit }
     ]
+    const wsGlobal = XLSX.utils.json_to_sheet(globalData)
+    XLSX.utils.book_append_sheet(wb, wsGlobal, "Résumé_Patrimoine")
 
-    const ws = XLSX.utils.json_to_sheet(data)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Rapport Trésorerie")
+    // Détail P&L
+    const plSheetData = [
+      { 'Indicateur': `Revenu Mensuel (${now.toLocaleDateString('fr-FR', { month: 'long' })})`, 'Valeur': monthlyRevenue },
+      { 'Indicateur': 'Coût des Ventes (COGS)', 'Valeur': -monthlyCOGS },
+      { 'Indicateur': 'Charges Mensuelles', 'Valeur': -monthlyExpenses },
+      { 'Indicateur': 'BÉNÉFICE NET', 'Valeur': netProfit }
+    ]
+    const wsPL = XLSX.utils.json_to_sheet(plSheetData)
+    XLSX.utils.book_append_sheet(wb, wsPL, "Performance_PL")
+
+    // Breakdown par boutique si consolidé
+    if (isConsolidated) {
+      const wsBoutiques = XLSX.utils.json_to_sheet(boutiqueStats.map(b => ({
+        'Boutique': b.name,
+        'Chiffre d\'Affaires': b.revenue,
+        'Dépenses': b.expenses,
+        'Bénéfice Net': b.net,
+        'Valeur Stock': b.stockValue,
+        'Marge (%)': Math.round(b.margin)
+      })))
+      XLSX.utils.book_append_sheet(wb, wsBoutiques, "Détail_Par_Boutique")
+    }
+
     XLSX.writeFile(wb, `Rapport_Tresorerie_Butik_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.xlsx`)
   }
 
@@ -129,15 +207,25 @@ export default function Treasury() {
             <Landmark className="text-primary" size={24} />
             Finance Pro <span className="text-primary/40">v2.0</span>
           </h1>
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Consolidation & Rapports P&L</p>
         </div>
-        <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-          <Activity size={12} className="text-primary animate-pulse" />
-          <span className="text-[9px] font-black uppercase text-primary tracking-tighter">Diagnostic Haute Précision</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+            <Activity size={12} className="text-primary animate-pulse" />
+            <span className="text-[9px] font-black uppercase text-primary tracking-tighter">Diagnostic Haute Précision</span>
+          </div>
+          
+          {/* Toggle Consolidation */}
+          <div 
+            onClick={() => setIsConsolidated(!isConsolidated)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-all ${isConsolidated ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg' : 'bg-card border-border text-muted-foreground hover:border-primary/50'}`}
+          >
+            <BarChart3 size={12} className={isConsolidated ? 'text-white' : 'text-primary'} />
+            <span className="text-[9px] font-black uppercase tracking-tighter">Mode Consolidé</span>
+          </div>
+          <button onClick={exportTreasuryReport} className="hidden sm:flex bg-emerald-500/10 text-emerald-600 px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest items-center gap-1 hover:bg-emerald-500 hover:text-white transition-all active:scale-95 ml-2 border border-emerald-500/20">
+            Excel
+          </button>
         </div>
-        <button onClick={exportTreasuryReport} className="hidden sm:flex bg-emerald-500/10 text-emerald-600 px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest items-center gap-1 hover:bg-emerald-500 hover:text-white transition-all active:scale-95 ml-2 border border-emerald-500/20">
-          Excel
-        </button>
       </header>
 
       {/* Hero Card : Patrimoine */}
@@ -146,7 +234,7 @@ export default function Treasury() {
         <div className="relative z-10 space-y-6">
           <div className="flex justify-between items-start">
              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Valeur Nette Entreprise</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">{isConsolidated ? 'Patrimoine Net Global' : 'Valeur Nette Boutique'}</p>
                 <h2 className="text-5xl font-black tracking-tighter">{formatF(netWorth)}</h2>
              </div>
              <div className="bg-white/10 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
@@ -216,6 +304,49 @@ export default function Treasury() {
           </div>
         </div>
       </div>
+
+      {/* Performance par Boutique (Mode Consolidé uniquement) */}
+      {isConsolidated && (
+        <section className="bg-card border border-border/50 rounded-[2.5rem] p-8 shadow-premium overflow-hidden">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-3">
+              <Store size={18} className="text-primary" /> Performance par Boutique
+            </h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border/50">
+                  <th className="pb-4 text-[9px] font-black uppercase text-muted-foreground tracking-widest">Boutique</th>
+                  <th className="pb-4 text-[9px] font-black uppercase text-muted-foreground tracking-widest text-right">CA Total</th>
+                  <th className="pb-4 text-[9px] font-black uppercase text-muted-foreground tracking-widest text-right">Charges</th>
+                  <th className="pb-4 text-[9px] font-black uppercase text-muted-foreground tracking-widest text-right">Marge</th>
+                  <th className="pb-4 text-[9px] font-black uppercase text-muted-foreground tracking-widest text-right">Bénéfice Net</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {boutiqueStats.map((b) => (
+                  <tr key={b.id} className="group hover:bg-muted/30 transition-colors">
+                    <td className="py-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-8 rounded-full bg-${b.color}-500`} />
+                        <span className="font-black text-xs uppercase tracking-tighter">{b.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 text-right font-black text-xs">{formatF(b.revenue)}</td>
+                    <td className="py-4 text-right font-black text-xs text-red-500">{formatF(b.expenses)}</td>
+                    <td className="py-4 text-right font-black text-xs text-primary">{Math.round(b.margin)}%</td>
+                    <td className={`py-4 text-right font-black text-xs ${b.net >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {formatF(b.net)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* Postes de Trésorerie */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -1,6 +1,6 @@
 export const createCoreSlice = (set, get) => ({
   // Multi-Boutiques & Utilisateurs
-  boutiques: [{ id: 'b1', name: 'Boutique Principale', location: 'Dakar', phone: '' }],
+  boutiques: [{ id: 'b1', name: 'Boutique Principale', location: 'Dakar', phone: '', color: 'blue', emoji: '🏪' }],
   activeBoutiqueId: 'b1',
   users: [],
   activeUserId: null,
@@ -201,6 +201,8 @@ export const createCoreSlice = (set, get) => ({
         name: boutique.name, 
         location: boutique.location || '',
         phone: boutique.phone || '',
+        color: boutique.color || 'blue',
+        emoji: boutique.emoji || '🏪',
         createdAt: new Date().toISOString()
       }]
     }))

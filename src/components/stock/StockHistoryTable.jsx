@@ -2,7 +2,9 @@ import { History, X } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 
 export default function StockHistoryTable({ historyFilter, setHistoryFilter }) {
-  const stock_logs = useStore(state => state.stock_logs)
+  const allLogs = useStore(state => state.stock_logs) || []
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
+  const stock_logs = allLogs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId)
 
   return (
     <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">

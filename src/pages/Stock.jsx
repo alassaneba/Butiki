@@ -3,13 +3,14 @@ import { useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import {
   Plus, Search, Package, History, Trash2, PackageSearch,
-  ScanBarcode, FileDown, LayoutGrid, List, AlertTriangle
+  ScanBarcode, FileDown, LayoutGrid, List, AlertTriangle, ShoppingCart
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Scanner from '../components/Scanner'
 import * as XLSX from 'xlsx'
 import ProductForm from '../components/stock/ProductForm'
 import StockHistoryTable from '../components/stock/StockHistoryTable'
+import ProcurementWizard from '../components/stock/ProcurementWizard'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -38,6 +39,7 @@ export default function Stock() {
   const activeBoutiqueId = useStore(s => s.activeBoutiqueId)
   const allStock       = useStore(s => s.stock)       || []
   const allLogs        = useStore(s => s.stock_logs)  || []
+  const suppliers      = useStore(s => s.suppliers)   || []
   const updateStockQty = useStore(s => s.updateStockQty)
   const deleteStockItem= useStore(s => s.deleteStockItem)
 
@@ -54,8 +56,11 @@ export default function Stock() {
   const [viewMode, setViewMode] = useState('grid')   // 'grid' | 'list'
   const [search,   setSearch]   = useState('')
   const [cat,      setCat]      = useState('all')
+  const [supp,     setSupp]     = useState('all')
   const [scanning, setScanning] = useState(false)
   const [openForm, setOpenForm] = useState(false)
+  const [openWizard, setOpenWizard] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
   const [histFilter, setHistFilter] = useState('')
 
   const [searchParams] = useSearchParams()
@@ -79,7 +84,8 @@ export default function Stock() {
     let list = stock.filter(i => {
       const matchQ = i.name.toLowerCase().includes(search.toLowerCase())
       const matchC = cat === 'all' || i.category === cat
-      return matchQ && matchC
+      const matchS = supp === 'all' || i.supplierId === supp
+      return matchQ && matchC && matchS
     })
     if (filterType === 'low') list = list.filter(i => i.current_stock <= (i.alert_threshold || 10))
 
@@ -146,11 +152,19 @@ export default function Stock() {
           </div>
           {/* Bouton primaire — MÊME style que "Nouveau Fournisseur" */}
           <button
-            onClick={() => setOpenForm(true)}
+            onClick={() => { setEditingItem(null); setOpenForm(true) }}
             className="bg-primary text-white px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-md active:scale-95 whitespace-nowrap shrink-0"
           >
             <Plus size={14} strokeWidth={3} /> <span className="hidden sm:inline">Nouveau</span><span className="sm:hidden">+</span>
           </button>
+          {stats.alerts > 0 && (
+            <button
+              onClick={() => setOpenWizard(true)}
+              className="bg-orange-500 text-white px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 hover:bg-orange-600 transition-all shadow-md active:scale-95 whitespace-nowrap shrink-0"
+            >
+              <ShoppingCart size={14} strokeWidth={3} /> <span className="hidden sm:inline">Réappro</span> {stats.alerts}
+            </button>
+          )}
         </div>
       </header>
 
@@ -171,6 +185,35 @@ export default function Stock() {
                 }`}
               >
                 {c === 'all' ? 'Tous' : c}
+              </button>
+            ))}
+            </div>
+          </div>
+
+          {/* Filtres fournisseurs */}
+          <div style={{width: '100%', overflow: 'hidden'}} className="mt-2">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            <button
+              onClick={() => setSupp('all')}
+              className={`px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all whitespace-nowrap shrink-0 border ${
+                supp === 'all'
+                  ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                  : 'bg-card text-muted-foreground border-border/50 hover:border-border hover:bg-muted/50'
+              }`}
+            >
+              Tous Fournisseurs
+            </button>
+            {suppliers.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setSupp(s.id)}
+                className={`px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all whitespace-nowrap shrink-0 border ${
+                  supp === s.id
+                    ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                    : 'bg-card text-muted-foreground border-border/50 hover:border-border hover:bg-muted/50'
+                }`}
+              >
+                {s.name}
               </button>
             ))}
             </div>
@@ -301,6 +344,11 @@ export default function Stock() {
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             {isAlert && <span className="text-[7px] font-black uppercase px-1 rounded-sm bg-orange-500 text-white animate-pulse">STOCK BAS</span>}
+                            {item.supplierId && (
+                              <span className="text-[7px] font-black uppercase px-1 rounded-sm bg-blue-500/10 text-blue-600">
+                                {suppliers.find(s => s.id === item.supplierId)?.name || 'Fournisseur'}
+                              </span>
+                            )}
                             <span className="text-[9px] font-bold text-muted-foreground/40 italic truncate">{item.lastLabel}</span>
                           </div>
                         </div>
@@ -316,12 +364,20 @@ export default function Stock() {
 
                     {/* Ligne 2 : actions = même structure que Fournisseurs */}
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1 flex-wrap">
-                      <button
-                        onClick={() => { setHistFilter(item.name); setTab('history') }}
-                        className="flex items-center gap-1.5 p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all text-[9px] font-bold uppercase"
-                      >
-                        <History size={12} /> Détails
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => { setHistFilter(item.name); setTab('history') }}
+                          className="flex items-center gap-1.5 p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all text-[9px] font-bold uppercase"
+                        >
+                          <History size={12} /> Détails
+                        </button>
+                        <button
+                          onClick={() => { setEditingItem(item); setOpenForm(true) }}
+                          className="flex items-center gap-1.5 p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all text-[9px] font-bold uppercase"
+                        >
+                          <PackageSearch size={12} /> Éditer
+                        </button>
+                      </div>
                       <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
                         {/* Saisie quantité rapide = "PAYER" dans Fournisseurs */}
                         <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border ${isAlert ? 'bg-orange-500/10 border-orange-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
@@ -370,7 +426,26 @@ export default function Stock() {
             <ResponsiveDialogDescription>Ajouter un produit au catalogue.</ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
           <div className="-mx-6 -my-6 sm:m-0">
-            <ProductForm onSuccess={() => setOpenForm(false)} />
+            <ProductForm 
+              initialData={editingItem} 
+              onSuccess={() => { setOpenForm(false); setEditingItem(null) }} 
+            />
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+
+      {/* ══ ASSISTANT RÉAPPRO ══ */}
+      <ResponsiveDialog open={openWizard} onOpenChange={setOpenWizard}>
+        <ResponsiveDialogContent className="sm:max-w-lg">
+          <ResponsiveDialogHeader className="hidden">
+            <ResponsiveDialogTitle>Assistant Réapprovisionnement</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>Générer des commandes fournisseurs.</ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="-mx-6 -my-6 sm:m-0">
+            <ProcurementWizard 
+              items={stock.filter(i => i.current_stock <= (i.alert_threshold || 10))} 
+              onClose={() => setOpenWizard(false)} 
+            />
           </div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>

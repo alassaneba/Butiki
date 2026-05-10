@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 export const createStockSlice = (set, get) => ({
   stock: [],
   stock_logs: [],
+  transfers: [],
   inventory_history: [],
   purchase_orders: [],
   procurement_cart: [],
@@ -25,7 +26,7 @@ export const createStockSlice = (set, get) => ({
     }
 
     set((state) => ({
-      stock: [...state.stock, { ...item, id, boutiqueId: get().activeBoutiqueId }],
+      stock: [...state.stock, { ...item, id, boutiqueId: get().activeBoutiqueId, barcode: item.barcode || '' }],
       stock_logs: [stockLog, ...state.stock_logs].slice(0, 500)
     }))
 
@@ -77,6 +78,16 @@ export const createStockSlice = (set, get) => ({
     set((state) => ({
       stock: state.stock.map(s => s.id === productId ? { ...s, supplierId } : s)
     }))
+  },
+
+  updateStockItem: (id, updates) => {
+    const item = get().stock.find(s => s.id === id)
+    if (!item) return
+    set((state) => ({
+      stock: state.stock.map(s => s.id === id ? { ...s, ...updates } : s)
+    }))
+    get().logAction('Modification Produit', `${item.name} mis à jour`)
+    toast.success(`Produit mis à jour : ${item.name}`)
   },
 
   // ── Commandes Fournisseurs ──────────────────────────────────────
@@ -293,5 +304,109 @@ export const createStockSlice = (set, get) => ({
     }));
     
     get().logAction('Seed Stock', `${newItems.length} produits ajoutés`);
+  },
+
+  transferStock: (sourceBoutiqueId, destBoutiqueId, productId, quantity, reason = 'Transfert inter-boutique') => {
+    const qty = Number(quantity)
+    if (qty <= 0) return
+
+    const sourceItem = get().stock.find(s => s.id === productId && (s.boutiqueId || 'b1') === sourceBoutiqueId)
+    if (!sourceItem || sourceItem.current_stock < qty) {
+      toast.error('Stock insuffisant pour le transfert')
+      return
+    }
+
+    const destBoutique = get().boutiques.find(b => b.id === destBoutiqueId)
+    if (!destBoutique) return
+
+    // Chercher le produit correspondant dans la destination (par barcode ou nom)
+    let destItem = get().stock.find(s => 
+      (s.boutiqueId || 'b1') === destBoutiqueId && 
+      ((sourceItem.barcode && s.barcode === sourceItem.barcode) || (s.name === sourceItem.name))
+    )
+
+    const now = new Date().toISOString()
+    const transferId = crypto.randomUUID().slice(0, 8)
+
+    // Logs
+    const outLog = {
+      id: crypto.randomUUID(),
+      date: now,
+      productId: sourceItem.id,
+      productName: sourceItem.name,
+      type: 'sortie',
+      quantity: qty,
+      reason: `${reason} vers ${destBoutique.name} (#${transferId})`,
+      boutiqueId: sourceBoutiqueId,
+      userId: get().activeUserId
+    }
+
+    set((state) => {
+      let newStock = state.stock.map(s => 
+        s.id === sourceItem.id ? { ...s, current_stock: s.current_stock - qty } : s
+      )
+
+      let destLog;
+      if (destItem) {
+        newStock = newStock.map(s => 
+          s.id === destItem.id ? { ...s, current_stock: s.current_stock + qty } : s
+        )
+        destLog = {
+          id: crypto.randomUUID(),
+          date: now,
+          productId: destItem.id,
+          productName: destItem.name,
+          type: 'entree',
+          quantity: qty,
+          reason: `${reason} depuis ${get().boutiques.find(b => b.id === sourceBoutiqueId)?.name || 'Source'} (#${transferId})`,
+          boutiqueId: destBoutiqueId,
+          userId: get().activeUserId
+        }
+      } else {
+        const newDestId = crypto.randomUUID()
+        const newItem = {
+          ...sourceItem,
+          id: newDestId,
+          boutiqueId: destBoutiqueId,
+          current_stock: qty,
+          barcode: sourceItem.barcode || ''
+        }
+        newStock.push(newItem)
+        destLog = {
+          id: crypto.randomUUID(),
+          date: now,
+          productId: newDestId,
+          productName: newItem.name,
+          type: 'initial',
+          quantity: qty,
+          reason: `${reason} depuis ${get().boutiques.find(b => b.id === sourceBoutiqueId)?.name || 'Source'} (#${transferId})`,
+          boutiqueId: destBoutiqueId,
+          userId: get().activeUserId
+        }
+      }
+
+      const transferRecord = {
+        id: transferId,
+        date: now,
+        productId: sourceItem.id,
+        productName: sourceItem.name,
+        quantity: qty,
+        sourceBoutiqueId,
+        sourceBoutiqueName: get().boutiques.find(b => b.id === sourceBoutiqueId)?.name || 'Source',
+        destBoutiqueId,
+        destBoutiqueName: destBoutique.name,
+        userName: get().users.find(u => u.id === get().activeUserId)?.name || 'Système',
+        reason
+      }
+
+      return {
+        stock: newStock,
+        stock_logs: [outLog, destLog, ...state.stock_logs].slice(0, 1000),
+        transfers: [transferRecord, ...(state.transfers || [])].slice(0, 500)
+      }
+    })
+
+    get().logAction('Transfert Stock', `${sourceItem.name} : ${qty} unités de ${sourceBoutiqueId} vers ${destBoutiqueId}`)
+    toast.success(`Transfert de ${qty} unités effectué avec succès`)
   }
 });

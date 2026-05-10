@@ -45,7 +45,8 @@ export const createPeopleSlice = (set, get) => ({
           total_debt: initialDebt,
           transactions: firstTransaction,
           rating: 0,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          boutiqueId: get().activeBoutiqueId || 'b1'
         }]
       };
     })
@@ -105,9 +106,15 @@ export const createPeopleSlice = (set, get) => ({
         expenses: [...state.expenses, newExpense]
       }
       if (paymentMethod !== 'cash') {
+        const boutiqueId = get().activeBoutiqueId || 'b1'
+        const currentBoutiqueFintech = state.fintech_balances[boutiqueId] || {}
+        
         newState.fintech_balances = {
           ...state.fintech_balances,
-          [paymentMethod]: (state.fintech_balances?.[paymentMethod] || 0) - Number(amount)
+          [boutiqueId]: {
+            ...currentBoutiqueFintech,
+            [paymentMethod]: (currentBoutiqueFintech[paymentMethod] || 0) - Number(amount)
+          }
         }
       }
       return newState
@@ -134,7 +141,8 @@ export const createPeopleSlice = (set, get) => ({
           pending_items: client.pending_items || '',
           loyalty_points: 0,
           loyalty_logs: [],
-          transactions: firstTransaction
+          transactions: firstTransaction,
+          boutiqueId: get().activeBoutiqueId || 'b1'
         }]
       };
     })
@@ -221,9 +229,14 @@ export const createPeopleSlice = (set, get) => ({
       };
 
       if (paymentMethod !== 'cash') {
+        const boutiqueId = get().activeBoutiqueId || 'b1'
+        const currentBoutiqueFintech = state.fintech_balances[boutiqueId] || {}
         newState.fintech_balances = {
           ...state.fintech_balances,
-          [paymentMethod]: (state.fintech_balances?.[paymentMethod] || 0) + Number(amount)
+          [boutiqueId]: {
+            ...currentBoutiqueFintech,
+            [paymentMethod]: (currentBoutiqueFintech[paymentMethod] || 0) + Number(amount)
+          }
         }
       }
 

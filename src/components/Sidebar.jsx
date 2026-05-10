@@ -133,7 +133,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
         <div className="flex h-16 items-center justify-between px-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
             {config?.logo || '/logo.png' ? (
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center p-1.5 shadow-sm overflow-hidden shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center p-0 shadow-sm overflow-hidden shrink-0">
                 <img 
                   src={config?.logo || '/logo.png'} 
                   alt="Logo" 

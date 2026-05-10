@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import { CalendarDays, Wallet, Download, Lock, X, CheckCircle, Croissant, Flame, History, ArrowRight, BadgeCheck, Smartphone } from 'lucide-react'
+import { CalendarDays, Wallet, Download, Lock, X, CheckCircle, Croissant, Flame, History, ArrowRight, BadgeCheck, Smartphone, Activity } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -25,21 +25,23 @@ const formatTime = (iso) => {
 }
 
 export default function Historique() {
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const daily_cash_register = useStore(state => state.daily_cash_register)
-  const expenses = useStore(state => state.expenses)
-  const inflows = useStore(state => state.inflows) || []
+  const allExpenses = useStore(state => state.expenses) || []
+  const allInflows = useStore(state => state.inflows) || []
   const bread_logs = useStore(state => state.bread_logs)
   const gas_logs = useStore(state => state.gas_logs)
-  const credit_logs = useStore(state => state.credit_logs) || []
+  const allCreditLogs = useStore(state => state.credit_logs) || []
+  const boutiques = useStore(state => state.boutiques) || []
   const suppliers = useStore(state => state.suppliers)
   const closeCashRegister = useStore(state => state.closeCashRegister)
   const logAction = useStore(state => state.logAction)
   const payBreadLog = useStore(state => state.payBreadLog)
   const payGasLog = useStore(state => state.payGasLog)
   const payCreditLog = useStore(state => state.payCreditLog)
-  const fintech_transactions = useStore(state => state.fintech_transactions) || []
-  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const activeUser = useStore(state => state.users.find(u => u.id === state.activeUserId))
+  const allFintechTransactions = useStore(state => state.fintech_transactions) || []
+  const activeUser = useStore(state => (state.users || []).find(u => u.id === state.activeUserId))
+  const [isConsolidated, setIsConsolidated] = useState(false)
 
   const [activeTab, setActiveTab] = useState('caisse') // 'caisse', 'stock' or 'fintech'
   const [closingRegister, setClosingRegister] = useState(null)
@@ -55,16 +57,27 @@ export default function Historique() {
     }
   }, [activeUser?.name, managerName])
   
-  const sortedRegisters = daily_cash_register
-    .filter(reg => (reg.boutiqueId || 'b1') === activeBoutiqueId)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const credit_logs = useMemo(() => isConsolidated ? allCreditLogs : allCreditLogs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId), [allCreditLogs, activeBoutiqueId, isConsolidated])
+  const fintech_transactions = useMemo(() => isConsolidated ? allFintechTransactions : allFintechTransactions.filter(tx => (tx.boutiqueId || 'b1') === activeBoutiqueId), [allFintechTransactions, activeBoutiqueId, isConsolidated])
+  const expenses = useMemo(() => isConsolidated ? allExpenses : allExpenses.filter(e => (e.boutiqueId || 'b1') === activeBoutiqueId), [allExpenses, activeBoutiqueId, isConsolidated])
+  const inflows = useMemo(() => isConsolidated ? allInflows : allInflows.filter(i => (i.boutiqueId || 'b1') === activeBoutiqueId), [allInflows, activeBoutiqueId, isConsolidated])
 
-  // Fusion des logs pain, gaz et crédit pour l'historique stock
-  const allStockLogs = [
-    ...bread_logs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId).map(l => ({ ...l, logType: 'pain' })),
-    ...gas_logs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId).map(l => ({ ...l, logType: 'gaz' })),
-    ...credit_logs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId).map(l => ({ ...l, logType: 'credit' }))
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const sortedRegisters = useMemo(() => {
+    const list = isConsolidated ? daily_cash_register : daily_cash_register.filter(reg => (reg.boutiqueId || 'b1') === activeBoutiqueId)
+    return [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [daily_cash_register, activeBoutiqueId, isConsolidated])
+
+  const allStockLogs = useMemo(() => {
+    const bread = isConsolidated ? bread_logs : bread_logs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId)
+    const gas = isConsolidated ? gas_logs : gas_logs.filter(l => (l.boutiqueId || 'b1') === activeBoutiqueId)
+    const credit = credit_logs // Already filtered above
+    
+    return [
+      ...bread.map(l => ({ ...l, logType: 'pain' })),
+      ...gas.map(l => ({ ...l, logType: 'gaz' })),
+      ...credit.map(l => ({ ...l, logType: 'credit' }))
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [bread_logs, gas_logs, credit_logs, isConsolidated])
 
   const parentRef = useRef()
 
@@ -181,6 +194,15 @@ export default function Historique() {
               <Smartphone size={14} /> Fintech
             </button>
           </div>
+
+          {/* Toggle Consolidation */}
+          <div 
+            onClick={() => setIsConsolidated(!isConsolidated)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer transition-all w-full sm:w-auto justify-center ${isConsolidated ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg' : 'bg-card border-border text-muted-foreground hover:border-primary/50'}`}
+          >
+            <Activity size={12} className={isConsolidated ? 'text-white' : 'text-primary'} />
+            <span className="text-[10px] font-black uppercase tracking-widest">Réseau</span>
+          </div>
           
           <button 
             onClick={exportToExcel}
@@ -233,6 +255,11 @@ export default function Historique() {
                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border ${isClosed ? 'bg-muted/50 text-muted-foreground border-border/50' : 'bg-orange-500/20 text-orange-600 border-orange-500/30'}`}>
                               {isClosed ? 'Clôturé' : 'Session Ouverte'}
                             </span>
+                            {isConsolidated && (
+                              <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase border border-primary/20 bg-primary/5 text-primary`}>
+                                {boutiques.find(b => b.id === (reg.boutiqueId || 'b1'))?.name || 'Boutique'}
+                              </span>
+                            )}
                             <span className="text-[9px] text-muted-foreground font-bold truncate tracking-widest uppercase">{isClosed ? reg.closing_manager_name || reg.manager_name : reg.manager_name}</span>
                             {isClosed && reg.fintech_discrepancies && Object.values(reg.fintech_discrepancies).some(v => v !== 0) && (
                               <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-500/10 text-red-600 border border-red-500/20">
@@ -296,7 +323,10 @@ export default function Historique() {
                           {isPain ? <Croissant size={18} /> : log.logType === 'gaz' ? <Flame size={18} /> : <Smartphone size={18} />}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">{formatDate(log.date)} à {formatTime(log.date)}</p>
+                          <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">
+                            {formatDate(log.date)} à {formatTime(log.date)} 
+                            {isConsolidated && ` • ${boutiques.find(b => b.id === (log.boutiqueId || 'b1'))?.name || 'Boutique'}`}
+                          </p>
                           <h4 className="font-black text-xs sm:text-sm truncate">{supplier}</h4>
                           <p className="text-[9px] text-muted-foreground truncate font-bold uppercase tracking-widest">
                             {isPain ? (
@@ -373,6 +403,11 @@ export default function Historique() {
                              <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${isPayment ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'}`}>
                                {isPayment ? '+ Entrée' : '- Sortie'}
                              </span>
+                             {isConsolidated && (
+                               <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                 {boutiques.find(b => b.id === (tx.boutiqueId || 'b1'))?.name || 'Boutique'}
+                               </span>
+                             )}
                              {tx.status === 'confirmed' && <BadgeCheck size={12} className="text-emerald-500" />}
                           </div>
                         </div>
@@ -408,8 +443,8 @@ export default function Historique() {
           {selectedDetailRegister && (() => {
             const reg = selectedDetailRegister
             const regDate = new Date(reg.date).toLocaleDateString()
-            const dayExpenses = expenses.filter(exp => exp.date && new Date(exp.date).toLocaleDateString() === regDate)
-            const dayInflows = (useStore.getState().inflows || []).filter(inf => inf.date && new Date(inf.date).toLocaleDateString() === regDate)
+            const dayExpenses = allExpenses.filter(exp => exp.date && new Date(exp.date).toLocaleDateString() === regDate)
+            const dayInflows = allInflows.filter(inf => inf.date && new Date(inf.date).toLocaleDateString() === regDate)
             
             const totalExpenses = dayExpenses.reduce((sum, e) => sum + Number(e.amount), 0)
             const totalInflows = dayInflows.reduce((sum, i) => sum + Number(i.amount), 0)
