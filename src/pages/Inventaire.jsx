@@ -45,6 +45,8 @@ export default function Inventaire() {
   
   // local state for counting
   const [counts, setCounts] = useState({})
+  const [typeCounts, setTypeCounts] = useState({})
+  const [extraUnits, setExtraUnits] = useState({})
   const [search, setSearch] = useState('')
   const [isScanning, setIsScanning] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -101,8 +103,19 @@ export default function Inventaire() {
   const handleTypeCountChange = (item, typeVal) => {
     const qtyPerType = item.qty_per_type || 1
     const n = typeVal === '' ? 0 : Number(typeVal)
-    // On met à jour le total (Compté) automatiquement
-    handleCountChange(item.id, n * qtyPerType)
+    const extra = Number(extraUnits[item.id]) || 0
+    
+    setTypeCounts(prev => ({ ...prev, [item.id]: typeVal }))
+    handleCountChange(item.id, (n * qtyPerType) + extra)
+  }
+
+  const handleExtraUnitChange = (item, extraVal) => {
+    const qtyPerType = item.qty_per_type || 1
+    const nTypes = Number(typeCounts[item.id]) || 0
+    const extra = extraVal === '' ? 0 : Number(extraVal)
+    
+    setExtraUnits(prev => ({ ...prev, [item.id]: extraVal }))
+    handleCountChange(item.id, (nTypes * qtyPerType) + extra)
   }
 
   const handleScanSuccess = (decodedText) => {
@@ -282,9 +295,12 @@ export default function Inventaire() {
                 <thead className="bg-muted/30 border-b border-border/50">
                   <tr className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">
                     <th className="px-3 py-2">Article</th>
+                    <th className="px-3 py-2 text-center">Achat par Type</th>
                     <th className="px-3 py-2 text-center">Théo.</th>
                     <th className="px-3 py-2 text-center">Nb. Type</th>
+                    <th className="px-3 py-2 text-center">Nb. Unite</th>
                     <th className="px-3 py-2 text-center">Compté (Unités)</th>
+                    <th className="px-3 py-2 text-center">Valeur</th>
                     <th className="px-3 py-2 text-right">Écart</th>
                     <th className="px-3 py-2 text-right">Action</th>
                   </tr>
@@ -301,6 +317,9 @@ export default function Inventaire() {
                           <p className="font-bold truncate max-w-[150px] sm:max-w-xs">{item.name}</p>
                           <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest">{item.category || 'Général'}</p>
                         </td>
+                        <td className="px-3 py-2.5 text-center font-black">
+                          {(item.price_buy * (item.qty_per_type || 1)).toLocaleString()} F
+                        </td>
                         <td className="px-3 py-2.5 text-center">
                           <span className="inline-block px-2 py-0.5 bg-secondary text-muted-foreground rounded-md font-black">{item.current_stock}</span>
                         </td>
@@ -308,6 +327,7 @@ export default function Inventaire() {
                            <div className="flex flex-col items-center gap-1">
                              <input 
                                type="number"
+                               value={typeCounts[item.id] || ''}
                                placeholder="0"
                                onChange={(e) => handleTypeCountChange(item, e.target.value)}
                                className="w-14 p-1.5 text-center font-black rounded-lg border border-border/50 bg-secondary/20 focus:border-primary outline-none transition-all text-[10px]"
@@ -318,11 +338,25 @@ export default function Inventaire() {
                         <td className="px-3 py-2.5 text-center">
                            <input 
                              type="number"
+                             value={extraUnits[item.id] || ''}
+                             placeholder="0"
+                             onChange={(e) => handleExtraUnitChange(item, e.target.value)}
+                             className="w-14 p-1.5 text-center font-black rounded-lg border border-border/50 bg-secondary/20 focus:border-primary outline-none transition-all text-[10px]"
+                           />
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                           <input 
+                             type="number"
                              value={counted}
                              placeholder="-"
                              onChange={(e) => handleCountChange(item.id, e.target.value)}
                              className={`w-16 p-1.5 text-center font-black rounded-lg border-2 transition-all outline-none focus:ring-2 ring-primary/20 ${isCounted ? 'border-primary text-primary bg-background shadow-inner' : 'border-border/50 bg-muted/10 focus:border-primary'}`}
                            />
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <p className="font-black text-primary">
+                            {isCounted ? (Number(counted) * item.price_buy).toLocaleString() : '--'} <span className="text-[8px] opacity-40">F</span>
+                          </p>
                         </td>
                         <td className="px-3 py-2.5 text-right">
                            {isCounted ? (

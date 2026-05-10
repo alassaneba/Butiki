@@ -53,7 +53,7 @@ export default function Ventes() {
   // 🚀 P3 — États groupés pour optimisation des rendus
   const [ui, setUi] = useState({ 
     activeTab: 'terminal', 
-    viewMode: 'grid', 
+    viewMode: 'list', 
     showCartDrawer: false, 
     showSuccess: false,
     showNewClientDialog: false,
@@ -115,17 +115,35 @@ export default function Ventes() {
 
   const favorites = useMemo(() => [...stockList].sort((a,b) => (b.current_stock > a.current_stock ? 1 : -1)).slice(0, 5), [stockList])
 
-  // 🚀 P2 — Virtualisation de la grille de produits
+  // 🚀 Gestion responsive et par mode du nombre de colonnes
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+  
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const columns = useMemo(() => {
+    if (windowWidth < 768) return 1
+    if (windowWidth < 1280) return 2
+    return 3
+  }, [windowWidth])
+
   const parentRef = useRef(null)
-  const columns = ui.viewMode === 'grid' ? 3 : 1
   const rowCount = Math.ceil(filteredProducts.length / columns)
 
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => ui.viewMode === 'grid' ? 125 : 80,
+    estimateSize: () => ui.viewMode === 'grid' ? 250 : 115, 
     overscan: 5,
   })
+
+  // 🚀 Forcer le recalcul complet lors du changement de mode ou de colonnes
+  useEffect(() => {
+    rowVirtualizer.measure()
+  }, [ui.viewMode, columns, rowCount])
 
   const filteredSales = useMemo(() => {
     const sList = sales || []
@@ -400,6 +418,7 @@ export default function Ventes() {
             </div>
             <div ref={parentRef} className="flex-1 overflow-y-auto no-scrollbar pr-1 pb-20">
               <div 
+                key={ui.viewMode}
                 style={{
                   height: `${rowVirtualizer.getTotalSize()}px`,
                   width: '100%',
@@ -421,32 +440,79 @@ export default function Ventes() {
                         height: `${virtualRow.size}px`,
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
-                      className={clsx("grid gap-4 px-1", ui.viewMode === 'grid' ? "grid-cols-3" : "grid-cols-1")}
+                      className={clsx("grid gap-3 px-1", 
+                        columns === 3 ? "grid-cols-3" : 
+                        columns === 2 ? "grid-cols-2" : "grid-cols-1"
+                      )}
                     >
                       {rowProducts.map(p => (
-                        <div 
-                          key={p.id} 
-                          onClick={() => addToCart(p)} 
-                          className={clsx(
-                            "bg-card border border-border p-2 rounded-[1.5rem] shadow-sm cursor-pointer hover:border-primary transition-all group relative overflow-hidden flex flex-col justify-between", 
-                            ui.viewMode === 'list' ? "flex-row items-center gap-3 py-3 h-[70px]" : "h-[115px]"
-                          )}
-                        >
-                          <div className={clsx("w-9 h-9 rounded-xl bg-primary/5 text-primary flex items-center justify-center shrink-0 overflow-hidden", ui.viewMode === 'list' ? "w-8 h-8" : "mb-1")}>
-                            <ImageWithFallback 
-                              src={p.image} 
-                              alt={p.name} 
-                              fallback={<Package size={ui.viewMode === 'list' ? 16 : 20} />} 
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-black uppercase tracking-tight truncate">{p.name}</p>
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-[10px] font-bold text-primary">{p.price_sell.toLocaleString()} F</p>
-                              <p className={clsx("text-[8px] font-black uppercase px-2 py-0.5 rounded-full", p.current_stock < 5 ? "bg-red-500/10 text-red-500" : "bg-emerald-500/10 text-emerald-500")}>Stock: {p.current_stock}</p>
+                        ui.viewMode === 'grid' ? (
+                          /* Option 1 : Grille Verticale Moderne */
+                          <div 
+                            key={p.id} 
+                            onClick={() => addToCart(p)} 
+                            className="bg-card/50 backdrop-blur-md border border-border p-2 rounded-[2.2rem] shadow-sm cursor-pointer hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all group relative overflow-hidden flex flex-col h-[225px]"
+                          >
+                            <div className="w-full h-32 rounded-[1.8rem] bg-muted shrink-0 overflow-hidden border border-border/50 shadow-inner relative">
+                              <ImageWithFallback 
+                                src={p.image} 
+                                alt={p.name} 
+                                fallback={<Package size={32} className="opacity-20" />} 
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0 p-2 flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 truncate">{p.category || 'Général'}</p>
+                                  <div className={clsx("px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase", p.current_stock < 5 ? "bg-red-500/10 text-red-500" : "bg-emerald-500/10 text-emerald-500")}>
+                                    Stock: {p.current_stock}
+                                  </div>
+                                </div>
+                                <p className="text-xs font-black uppercase tracking-tight line-clamp-2 leading-tight group-hover:text-primary transition-colors">{p.name}</p>
+                              </div>
+                              
+                              <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/30">
+                                <p className="text-sm font-black text-primary">{p.price_sell.toLocaleString()} <span className="text-[9px] opacity-60">F</span></p>
+                                <div className="opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 bg-primary text-white p-1.5 rounded-xl shadow-lg">
+                                  <Plus size={14} />
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        ) : (
+                          /* Option 2 : Cartes Horizontales Larges */
+                          <div 
+                            key={p.id} 
+                            onClick={() => addToCart(p)} 
+                            className="bg-card/50 backdrop-blur-md border border-border p-2 rounded-[1.5rem] shadow-sm cursor-pointer hover:border-primary hover:bg-card/80 transition-all group relative overflow-hidden flex items-center gap-3 h-[95px]"
+                          >
+                            <div className="w-20 h-20 rounded-xl bg-muted shrink-0 overflow-hidden border border-border/50 shadow-inner">
+                              <ImageWithFallback 
+                                src={p.image} 
+                                alt={p.name} 
+                                fallback={<Package size={24} className="opacity-20" />} 
+                              />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0 py-0.5">
+                              <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground truncate mb-0.5">{p.category || 'Général'}</p>
+                              <p className="text-[11px] font-black uppercase tracking-tight truncate leading-tight mb-1.5 group-hover:text-primary transition-colors">{p.name}</p>
+                              
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-black text-primary">{p.price_sell.toLocaleString()} <span className="text-[8px] opacity-60">F</span></p>
+                                <div className={clsx("flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase", p.current_stock < 5 ? "bg-red-500/10 text-red-500" : "bg-emerald-500/10 text-emerald-500")}>
+                                  {p.current_stock}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 bg-primary text-white p-1.5 rounded-lg shadow-lg">
+                              <Plus size={14} />
+                            </div>
+                          </div>
+                        )
                       ))}
                     </div>
                   )
