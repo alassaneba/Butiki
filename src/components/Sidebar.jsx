@@ -66,7 +66,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     }
     const role = activeUser.role || 'caissier'
     // Fallback intelligent : si gérant, accès total. Sinon, restreint.
-    const defaultPermissions = role === 'gerant' 
+    const defaultPermissions = (role === 'gerant' || role === 'proprietaire')
       ? { full_access: true, modules: [] } 
       : { modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'] }
     

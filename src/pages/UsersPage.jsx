@@ -28,7 +28,8 @@ const MODULES = [
 ]
 
 const ROLE_UI = {
-  gerant: { label: 'Gérant', icon: Crown, color: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20' },
+  proprietaire: { label: 'Propriétaire', icon: Crown, color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+  gerant: { label: 'Gérant', icon: Shield, color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20' },
   caissier: { label: 'Caissier', icon: User, color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
 }
 
@@ -140,8 +141,9 @@ export default function UsersPage() {
                   onChange={e => setRole(e.target.value)}
                   className="w-full p-3 border border-border rounded-xl bg-background outline-none focus:ring-4 ring-primary/10 font-bold text-sm"
                 >
-                  <option value="gerant">👑 Gérant (accès total)</option>
-                  <option value="caissier">👤 Caissier (accès restreint)</option>
+                  <option value="proprietaire">👑 Propriétaire (Full Access)</option>
+                  <option value="gerant">🛡️ Gérant (Opérations)</option>
+                  <option value="caissier">👤 Caissier (Ventes)</option>
                 </select>
               </div>
               <div>
@@ -162,7 +164,7 @@ export default function UsersPage() {
                  </p>
                  <div className="grid grid-cols-1 gap-1.5 max-h-[200px] overflow-y-auto pr-1 scrollbar-hide">
                     {MODULES.map(m => {
-                      const permissions = config?.role_permissions?.[role] || (role === 'gerant' ? { full_access: true } : { modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'] })
+                      const permissions = config?.role_permissions?.[role] || (role === 'caissier' ? { modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'] } : { full_access: true })
                       const hasAccess = permissions.full_access || permissions.modules?.includes(m.id)
                       return (
                         <div key={m.id} className={clsx(
@@ -267,7 +269,7 @@ export default function UsersPage() {
                           {isActive ? 'Session Active' : 'Activer'}
                         </button>
                         <button
-                          disabled={user.role === 'gerant' && users.filter(u => u.role === 'gerant').length <= 1}
+                          disabled={user.role === 'proprietaire' && users.filter(u => u.role === 'proprietaire').length <= 1}
                           onClick={() => { if (window.confirm(`Révoquer l'accès de ${user.name} ?`)) deleteUser(user.id) }}
                           className="p-2.5 text-muted-foreground hover:text-destructive rounded-xl hover:bg-destructive/10 transition-all disabled:opacity-0"
                           title="Supprimer"
@@ -287,8 +289,8 @@ export default function UsersPage() {
       {/* Configuration des Permissions (Gérant uniquement) */}
       {(() => {
         const currentUser = users.find(u => u.id === activeUserId);
-        const isGerant = currentUser && currentUser.role === 'gerant';
-        if (!isGerant) return null;
+        const isManager = currentUser && (currentUser.role === 'gerant' || currentUser.role === 'proprietaire');
+        if (!isManager) return null;
 
         const permissions = config?.role_permissions?.caissier || { modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'] };
         const updatePermissions = (moduleId) => {
@@ -354,9 +356,10 @@ export default function UsersPage() {
       {/* Journal d'Audit Avancé - Sécurisé pour Gérants Uniquement */}
       {(() => {
         const currentUser = users.find(u => u.id === activeUserId);
-        const isGerant = currentUser && currentUser.role === 'gerant';
+        const isManager = currentUser && (currentUser.role === 'gerant' || currentUser.role === 'proprietaire');
+        const isOwner = currentUser && currentUser.role === 'proprietaire';
 
-        if (!isGerant) {
+        if (!isManager) {
           return (
             <div className="bg-card rounded-3xl border border-border shadow-sm p-10 text-center mt-6">
               <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center text-destructive mx-auto mb-4">

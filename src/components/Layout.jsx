@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { Menu, Sun, Moon, Crown, User, LogOut } from 'lucide-react'
+import { Menu, Sun, Moon, Crown, Shield, User, LogOut } from 'lucide-react'
 import Sidebar from './Sidebar'
 import BottomNav from './BottomNav'
 import NotificationCenter from './NotificationCenter'
@@ -145,7 +145,9 @@ export default function Layout() {
                 <span className="text-sm font-bold truncate max-w-[120px]">{activeUser.name}</span>
               </div>
               <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center border border-primary/20 shadow-inner">
-                {activeUser.role === 'gerant' ? <Crown size={14} className="text-yellow-500" /> : <User size={14} className="text-blue-500" />}
+                {activeUser.role === 'proprietaire' ? <Crown size={14} className="text-amber-500" /> : 
+                 activeUser.role === 'gerant' ? <Shield size={14} className="text-indigo-500" /> : 
+                 <User size={14} className="text-blue-500" />}
               </div>
               <button
                 onClick={handleLogout}

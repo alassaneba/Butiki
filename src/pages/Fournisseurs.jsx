@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import {
   Plus, Search, X, Eye, MessageCircle, Phone, History,
-  Truck, UserPlus, CreditCard, Receipt
+  Truck, UserPlus, CreditCard, Receipt, ShoppingCart
 } from 'lucide-react'
+import { toast } from 'sonner'
+import ProcurementWizard from '../components/stock/ProcurementWizard'
 import { motion, AnimatePresence } from 'framer-motion'
 import SupplierHistoryModal, { CatBadge } from '../components/people/SupplierHistoryModal'
 import {
@@ -17,8 +19,11 @@ import SupplierOrdersTable from '../components/people/SupplierOrdersTable'
 
 export default function Fournisseurs() {
   const allSuppliers = useStore(state => state.suppliers)
+  const allStock = useStore(state => state.stock)
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const suppliers = useMemo(() => (allSuppliers || []).filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSuppliers, activeBoutiqueId])
+  const stock = useMemo(() => (allStock || []).filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
+  
   const addSupplier = useStore(state => state.addSupplier)
   const addSupplierDebt = useStore(state => state.addSupplierDebt)
   const paySupplierDebt = useStore(state => state.paySupplierDebt)
@@ -26,6 +31,8 @@ export default function Fournisseurs() {
 
   const [tab, setTab] = useState('partners') // 'partners' | 'orders'
   const [isNewSupplierOpen, setIsNewSupplierOpen] = useState(false)
+  const [openWizard, setOpenWizard] = useState(false)
+  const [wizardItems, setWizardItems] = useState([])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [category, setCategory] = useState('general')
@@ -70,6 +77,26 @@ export default function Fournisseurs() {
     addSupplierDebt(activeSupplier.id, newDebtAmount, newDebtLibelle || 'Nouvelle dette')
     setNewDebtAmount(''); setNewDebtLibelle('')
     setActiveSupplier(null)
+  }
+
+  const handleStartOrder = (supplier) => {
+    const supplierItems = stock.filter(i => i.supplierId === supplier.id)
+    if (supplierItems.length === 0) {
+      toast.error(`Aucun produit n'est associé à ${supplier.name} dans le catalogue.`)
+      return
+    }
+    setWizardItems(supplierItems)
+    setOpenWizard(true)
+  }
+
+  const handleNewOrder = () => {
+    const itemsToReorder = stock.filter(i => i.current_stock <= (i.alert_threshold || 10))
+    if (itemsToReorder.length === 0) {
+      toast.info("Tous vos stocks sont corrects. Vous pouvez lancer une commande manuelle depuis la fiche d'un fournisseur.")
+      return
+    }
+    setWizardItems(itemsToReorder)
+    setOpenWizard(true)
   }
 
   const filteredSuppliers = useMemo(() => {
@@ -184,8 +211,17 @@ export default function Fournisseurs() {
                     </button>
                     <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
                       {supplier.phone && (
-                        <a href={`https://wa.me/${supplier.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><MessageCircle size={14} /></a>
+                        <a href={`https://wa.me/${supplier.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all" title="Contacter WhatsApp">
+                          <MessageCircle size={14} />
+                        </a>
                       )}
+                      <button 
+                        onClick={() => handleStartOrder(supplier)} 
+                        className="p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all"
+                        title="Nouvelle Commande"
+                      >
+                        <ShoppingCart size={14} />
+                      </button>
                       <button onClick={() => setActiveSupplier({ type: 'pay', ...supplier })} disabled={(supplier.total_debt || 0) <= 0} className="btn-ultra-compact bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white disabled:opacity-30 disabled:hover:bg-emerald-500/10 disabled:hover:text-emerald-600">PAYER</button>
                       <button onClick={() => setActiveSupplier({ type: 'debt', ...supplier })} className="btn-ultra-compact bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white">+ DETTE</button>
                     </div>
@@ -203,7 +239,17 @@ export default function Fournisseurs() {
           </div>
         </>
       ) : (
-        <SupplierOrdersTable />
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button 
+              onClick={handleNewOrder}
+              className="bg-primary text-white px-4 py-2 rounded-xl font-black text-xs flex items-center gap-2 hover:bg-primary/90 transition-all shadow-md active:scale-95"
+            >
+              <ShoppingCart size={16} /> Nouvelle Commande
+            </button>
+          </div>
+          <SupplierOrdersTable />
+        </div>
       )}
 
       {/* --- DRAWERS / MODALS --- */}
@@ -298,6 +344,22 @@ export default function Fournisseurs() {
           onClose={() => setDetailSupplier(null)}
         />
       )}
+
+      {/* Assistant Réappro / Commande */}
+      <ResponsiveDialog open={openWizard} onOpenChange={setOpenWizard}>
+        <ResponsiveDialogContent className="sm:max-w-lg">
+          <ResponsiveDialogHeader className="hidden">
+            <ResponsiveDialogTitle>Assistant Commande</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>Générer des commandes fournisseurs.</ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="-mx-6 -my-6 sm:m-0">
+            <ProcurementWizard 
+              items={wizardItems} 
+              onClose={() => setOpenWizard(false)} 
+            />
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   )
 }

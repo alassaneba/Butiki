@@ -24,7 +24,7 @@ export default function BottomNav() {
   const filteredBottomItems = allBottomItems.filter(item => {
     if (!activeUser) return item.path === '/users'
     const role = activeUser.role || 'caissier'
-    const defaultPermissions = role === 'gerant' 
+    const defaultPermissions = (role === 'gerant' || role === 'proprietaire')
       ? { full_access: true, modules: [] } 
       : { modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'] }
     

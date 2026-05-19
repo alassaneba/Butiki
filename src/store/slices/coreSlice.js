@@ -64,6 +64,7 @@ export const createCoreSlice = (set, get) => ({
     ],
     active_modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'charges', 'depot', 'clients', 'fournisseurs', 'historique', 'previsions', 'settings', 'tresorerie', 'procurement', 'audit'],
     role_permissions: {
+      proprietaire: { full_access: true },
       gerant: { full_access: true },
       caissier: { 
         modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'],
@@ -167,7 +168,7 @@ export const createCoreSlice = (set, get) => ({
       users: [...state.users, {
         id: crypto.randomUUID(),
         name: user.name,
-        role: user.role || 'caissier', // 'gerant' | 'caissier'
+        role: user.role || 'caissier', // 'proprietaire' | 'gerant' | 'caissier'
         pin: user.pin || '',
         whatsapp: user.whatsapp || '',
         createdAt: new Date().toISOString()

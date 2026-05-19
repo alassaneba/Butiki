@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { 
   Cloud, CloudOff, RefreshCw, UploadCloud, DownloadCloud, 
   Database, AlertTriangle, FileSpreadsheet, CircleDollarSign, 
-  Check, Target, Store, Shield, Lock, Eye, EyeOff, 
+  Check, Target, Store, Shield, Crown, Lock, Eye, EyeOff, 
   Upload, MapPin, FileText, Image as ImageIcon, ChevronRight,
   Info, HardDrive, Trash2, Globe, Settings as SettingsIcon,
   Monitor, Croissant, Flame, Tags, Cpu, Fingerprint, Plus, Smartphone, Palette, UserCheck, Bell, Save,
@@ -597,13 +597,23 @@ export default function Settings() {
                     </div>
                   </div>
                </Card>
-               <div className="p-5 bg-card/30 border border-border/50 rounded-[24px] flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600"><Shield size={20} /></div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase text-amber-600">Rôle : Administrateur / Gérant</p>
-                    <p className="text-[11px] font-bold text-muted-foreground">Accès total non restreint par défaut.</p>
-                  </div>
-               </div>
+               <div className="space-y-4">
+                   <div className="p-5 bg-amber-500/5 border border-amber-500/20 rounded-[28px] flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600 shadow-sm"><Crown size={20} /></div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-amber-600">Propriétaire (Super-Admin)</p>
+                        <p className="text-[11px] font-bold text-muted-foreground italic">Accès total non restreint aux finances, audits et réglages critiques.</p>
+                      </div>
+                   </div>
+
+                   <div className="p-5 bg-indigo-500/5 border border-indigo-500/20 rounded-[28px] flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 shadow-sm"><Shield size={20} /></div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-indigo-600">Gérant (Manager Opérationnel)</p>
+                        <p className="text-[11px] font-bold text-muted-foreground">Accès complet à la gestion quotidienne (Stocks, Commandes, Caisse).</p>
+                      </div>
+                   </div>
+                </div>
             </div>
           )}
 

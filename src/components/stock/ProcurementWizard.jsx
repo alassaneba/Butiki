@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
 import { ShoppingCart, Send, Phone, Package, Trash2, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -6,7 +6,8 @@ import { toast } from 'sonner'
 export default function ProcurementWizard({ items, onClose }) {
   const suppliers = useStore(state => state.suppliers)
   const createPurchaseOrder = useStore(state => state.createPurchaseOrder)
-  
+  const [quantities, setQuantities] = useState({}) // { stockId: qty }
+
   // Groupement par fournisseur
   const suggestedOrders = useMemo(() => {
     const groups = {}
@@ -21,38 +22,59 @@ export default function ProcurementWizard({ items, onClose }) {
           items: []
         }
       }
+      
+      const suggestedQty = Math.max(0, (item.alert_threshold || 10) * 2 - item.current_stock)
       groups[sId].items.push({
         ...item,
-        suggestedQty: Math.max(10, (item.alert_threshold || 10) * 2) // Suggestion basique
+        suggestedQty: suggestedQty > 0 ? suggestedQty : 10
       })
     })
     return Object.values(groups)
   }, [items, suppliers])
 
+  // Initialiser les quantités au montage ou quand les items changent
+  useEffect(() => {
+    const initial = {}
+    suggestedOrders.forEach(group => {
+      group.items.forEach(item => {
+        initial[item.id] = item.suggestedQty
+      })
+    })
+    setQuantities(initial)
+  }, [suggestedOrders])
+
   const handleCreateOrder = (order) => {
-    const totalAmount = order.items.reduce((sum, item) => sum + (item.price_buy * item.suggestedQty), 0)
+    const orderItems = order.items.map(i => ({
+      stockId: i.id,
+      name: i.name,
+      quantity: Number(quantities[i.id]) || 0,
+      unitPrice: i.price_buy,
+      totalUnits: Number(quantities[i.id]) || 0,
+    })).filter(i => i.quantity > 0)
+
+    if (orderItems.length === 0) {
+      toast.error("Veuillez saisir au moins une quantité supérieure à 0.")
+      return
+    }
+
+    const totalAmount = orderItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0)
     
     const newOrder = {
       supplierId: order.supplierId,
       supplierName: order.supplierName,
-      items: order.items.map(i => ({
-        stockId: i.id,
-        name: i.name,
-        quantity: i.suggestedQty,
-        unitPrice: i.price_buy,
-        totalUnits: i.suggestedQty,
-      })),
+      items: orderItems,
       totalAmount,
-      status: 'waiting'
+      status: 'waiting',
+      date: new Date().toISOString()
     }
 
     createPurchaseOrder(newOrder)
     
     // Générer message WhatsApp
-    const message = `*COMMANDE BUTIK PRO*\nFournisseur: ${order.supplierName}\n\nArticles demandés:\n${order.items.map(i => `- ${i.name} : ${i.suggestedQty} unités`).join('\n')}\n\nMerci de confirmer la disponibilité et le prix total.`
+    const message = `*COMMANDE BUTIK PRO*\nFournisseur: ${order.supplierName}\n\nArticles demandés:\n${orderItems.map(i => `- ${i.name} : ${i.quantity} unités`).join('\n')}\n\nMerci de confirmer la disponibilité et le prix total.`
     
     if (order.phone) {
-      const waUrl = `https://wa.me/${order.phone.replace(/\s/g, '')}?text=${encodeURIComponent(message)}`
+      const waUrl = `https://wa.me/${order.phone.replace(/\s/g, '').replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
       window.open(waUrl, '_blank')
     } else {
       toast.info("Commande enregistrée, mais aucun numéro WhatsApp trouvé pour ce fournisseur.")
@@ -66,10 +88,10 @@ export default function ProcurementWizard({ items, onClose }) {
       <header className="flex items-center justify-between">
         <div>
           <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
-            <ShoppingCart className="text-primary" size={18} /> Assistant Réappro
+            <ShoppingCart className="text-primary" size={18} /> Assistant Commande
           </h3>
           <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">
-            {suggestedOrders.length} commandes suggérées basées sur vos ruptures
+            {suggestedOrders.length} commandes suggérées
           </p>
         </div>
       </header>
@@ -92,16 +114,17 @@ export default function ProcurementWizard({ items, onClose }) {
             <div className="space-y-1.5">
               {order.items.map(item => (
                 <div key={item.id} className="flex justify-between items-center bg-card p-2 rounded-xl border border-border/20">
-                  <div className="min-w-0">
+                  <div className="min-w-0 pr-4">
                     <p className="text-[11px] font-black uppercase truncate">{item.name}</p>
                     <p className="text-[9px] font-bold text-orange-500 uppercase">Stock: {item.current_stock} U (Seuil: {item.alert_threshold})</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-muted-foreground">Qté à commander :</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[9px] font-black text-muted-foreground uppercase">Qté:</span>
                     <input 
                       type="number" 
-                      defaultValue={item.suggestedQty}
-                      className="w-12 bg-muted/30 border-none rounded-lg p-1 text-[11px] font-black text-right outline-none focus:ring-2 ring-primary/20"
+                      value={quantities[item.id] || ''}
+                      onChange={e => setQuantities({ ...quantities, [item.id]: e.target.value })}
+                      className="w-16 bg-muted/30 border-none rounded-lg p-2 text-[11px] font-black text-right outline-none focus:ring-2 ring-primary/20"
                     />
                   </div>
                 </div>
