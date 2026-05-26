@@ -5,12 +5,13 @@ import {
   TrendingUp, Package, Users, Wallet,
   ChevronRight, Building2, Globe, LayoutDashboard,
   ArrowLeftRight, ArrowRightLeft, CheckCircle2,
-  Activity, History, AlertTriangle, Search as SearchIcon, LayoutGrid, List
+  Activity, History, AlertTriangle, Search as SearchIcon, LayoutGrid, List, Trash2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogDescription } from '../components/ui/responsive-dialog'
 import TransferStockModal from '../components/stock/TransferStockModal'
 import { CustomBarChart } from '../components/ui/Charts'
+import { useStockStats } from '../store/financialSelectors'
 
 const formatF = (val) => `${Math.round(val || 0).toLocaleString()} F`
 
@@ -19,6 +20,10 @@ export default function Boutiques() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const switchBoutique = useStore(state => state.switchBoutique)
   const addBoutique = useStore(state => state.addBoutique)
+  const deleteBoutique = useStore(state => state.deleteBoutique)
+  
+  const [boutiqueToDelete, setBoutiqueToDelete] = useState(null)
+  const [isTransferringStock, setIsTransferringStock] = useState(true)
   
   const boutiqueList = boutiques || []
   
@@ -55,12 +60,14 @@ export default function Boutiques() {
     }, {})
   }, [boutiqueList, sales, stock, registers, users, todayStr])
 
+  const { totalStockValue } = useStockStats(null, true)
+
   const globalStats = useMemo(() => ({
     totalSales: sales.reduce((acc, s) => acc + (s.totalAmount || 0), 0),
-    totalStockValue: stock.reduce((acc, i) => acc + (i.current_stock * i.price_buy), 0),
+    totalStockValue: totalStockValue,
     totalClients: clients.length,
     boutiqueCount: boutiqueList.length
-  }), [sales, stock, clients, boutiqueList])
+  }), [sales, clients, boutiqueList, totalStockValue])
 
   const comparisonData = useMemo(() => {
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -323,11 +330,22 @@ export default function Boutiques() {
                   : 'border-border bg-card hover:border-primary/30'
                 }`}
               >
-                {activeBoutiqueId === boutique.id && (
-                  <div className="absolute top-4 right-4 bg-primary text-white p-1 rounded-full shadow-lg">
-                    <CheckCircle2 size={16} />
-                  </div>
-                )}
+                <div className="absolute top-4 right-4 flex gap-2 z-10">
+                  {boutique.id !== 'b1' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setBoutiqueToDelete(boutique) }}
+                      className="bg-destructive/10 text-destructive p-2 rounded-full shadow-sm hover:bg-destructive hover:text-white transition-all"
+                      title="Supprimer la boutique"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                  {activeBoutiqueId === boutique.id && (
+                    <div className="bg-primary text-white p-2 rounded-full shadow-lg flex items-center justify-center">
+                      <CheckCircle2 size={16} />
+                    </div>
+                  )}
+                </div>
                 
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
@@ -570,6 +588,58 @@ export default function Boutiques() {
               Créer la boutique
             </button>
           </form>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+
+      {/* MODAL DE SUPPRESSION */}
+      <ResponsiveDialog open={!!boutiqueToDelete} onOpenChange={(v) => !v && setBoutiqueToDelete(null)}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle /> Supprimer la succursale
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              Attention, cette action est irréversible. Vous allez supprimer {boutiqueToDelete?.name}.
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="space-y-4 pt-4">
+             <div className="p-4 bg-destructive/10 rounded-2xl border border-destructive/20 text-destructive text-sm font-bold">
+               Toutes les ventes, les dépenses, les transactions de caisse et les clients associés à cette boutique seront définitivement supprimés !
+             </div>
+             
+             {boutiqueToDelete && (allStock.filter(s => (s.boutiqueId || 'b1') === boutiqueToDelete.id).some(s => s.current_stock > 0)) && (
+               <div className="p-4 bg-orange-500/10 rounded-2xl border border-orange-500/20">
+                 <p className="text-orange-600 text-sm font-bold mb-2">Il reste du stock dans cette boutique.</p>
+                 <label className="flex items-center gap-3 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={isTransferringStock}
+                      onChange={(e) => setIsTransferringStock(e.target.checked)}
+                      className="w-5 h-5 rounded border-orange-500/50 text-orange-500 focus:ring-orange-500"
+                    />
+                    <span className="text-xs font-black uppercase text-orange-700">Transférer le stock restant vers la boutique principale avant suppression</span>
+                 </label>
+               </div>
+             )}
+
+             <div className="flex gap-3 pt-4">
+               <button 
+                 onClick={() => setBoutiqueToDelete(null)}
+                 className="flex-1 py-3 bg-muted text-muted-foreground rounded-2xl font-black uppercase text-xs"
+               >
+                 Annuler
+               </button>
+               <button 
+                 onClick={() => {
+                   deleteBoutique(boutiqueToDelete.id, isTransferringStock);
+                   setBoutiqueToDelete(null);
+                 }}
+                 className="flex-1 py-3 bg-destructive text-white rounded-2xl font-black uppercase text-xs"
+               >
+                 Confirmer la suppression
+               </button>
+             </div>
+          </div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>
     </div>

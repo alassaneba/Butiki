@@ -20,7 +20,7 @@ export default function Depot() {
   const vault_balance = useStore(state => state.vault_balance || 0)
   const allVaultTransactions = useStore(state => state.vault_transactions) || []
   const vault_transactions = useMemo(() => allVaultTransactions.filter(tx => tx.boutiqueId === activeBoutiqueId), [allVaultTransactions, activeBoutiqueId])
-  const fintech_balances = useStore(state => state.fintech_balances || {})
+  const fintech_balances = useStore(state => state.fintech_balances[state.activeBoutiqueId || 'b1']) || {}
   
   const transferToVault = useStore(state => state.transferToVault)
   const withdrawFromVault = useStore(state => state.withdrawFromVault)

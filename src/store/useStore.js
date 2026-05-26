@@ -44,9 +44,14 @@ export const useStore = create(
       // 🚀 P3b — Exclure audit_log et notifications de la persistence IDB
       // Ces données sont re-générées en session et n'ont pas besoin d'alourdir
       // le payload de sérialisation (audit_log = jusqu'à 500 entrées JSON)
+      // 🚀 P3b - Exclure également les tableaux lourds pour éviter de geler l'app
       partialize: (state) => {
         // eslint-disable-next-line no-unused-vars
-        const { audit_log, notifications, ...persistedState } = state
+        const { 
+          audit_log, notifications, 
+          sales, expenses, daily_cash_register, inflows, transfers, 
+          ...persistedState 
+        } = state
         return persistedState
       },
     }

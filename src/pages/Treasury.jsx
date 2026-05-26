@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
+import { useFinancialStats, useStockStats, useTreasuryStats } from '../store/financialSelectors'
 import { 
   PiggyBank, Wallet, Smartphone, Users, Truck, 
   Landmark, Activity, BarChart3, 
@@ -17,89 +18,29 @@ const formatF = (val) => {
 export default function Treasury() {
   const [isConsolidated, setIsConsolidated] = useState(false)
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const allSales = useStore(state => state.sales) || []
-  const allExpenses = useStore(state => state.expenses) || []
-  const allStock = useStore(state => state.stock) || []
-  const allClients = useStore(state => state.clients) || []
-  const allFournisseurs = useStore(state => state.fournisseurs) || []
-  const vault_balances = useStore(state => state.vault_balances) || {}
-  const fintech_balances = useStore(state => state.fintech_balances) || {}
   
-  const saleList = useMemo(() => isConsolidated ? allSales : allSales.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSales, activeBoutiqueId, isConsolidated])
-  const expenseList = useMemo(() => isConsolidated ? allExpenses : allExpenses.filter(e => (e.boutiqueId || 'b1') === activeBoutiqueId), [allExpenses, activeBoutiqueId, isConsolidated])
-  const stockList = useMemo(() => isConsolidated ? allStock : allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId, isConsolidated])
-  const clientList = useMemo(() => isConsolidated ? allClients : allClients.filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId), [allClients, activeBoutiqueId, isConsolidated])
-  const fournisseurList = useMemo(() => isConsolidated ? allFournisseurs : allFournisseurs.filter(f => (f.boutiqueId || 'b1') === activeBoutiqueId), [allFournisseurs, activeBoutiqueId, isConsolidated])
+  const { totalStockValue } = useStockStats(activeBoutiqueId, isConsolidated)
+  const { 
+    cashInRegister, 
+    totalFintech, 
+    vaultBalance: vault_balance, 
+    totalClientDebts, 
+    totalSupplierDebts, 
+    totalLiquidAssets 
+  } = useTreasuryStats(activeBoutiqueId, isConsolidated)
 
-  const vault_balance = useMemo(() => {
-    if (isConsolidated) return Object.values(vault_balances).reduce((acc, v) => acc + (v || 0), 0)
-    return vault_balances[activeBoutiqueId] || 0
-  }, [vault_balances, activeBoutiqueId, isConsolidated])
-
-  const totalFintech = useMemo(() => {
-    if (isConsolidated) {
-      return Object.values(fintech_balances).reduce((acc, b) => acc + (b.wave || 0) + (b.orange || 0), 0)
-    }
-    const currentFintech = fintech_balances[activeBoutiqueId] || { wave: 0, orange: 0 }
-    return (currentFintech.wave || 0) + (currentFintech.orange || 0)
-  }, [fintech_balances, activeBoutiqueId, isConsolidated])
-  
-  // Note: cashInRegister logic depends on daily_cash_register which is filtered in other components
-  // For Treasury, we might want to sum current active registers if any, but usually it's vault + fintech + assets
-  const daily_cash_register = useStore(state => state.daily_cash_register) || []
-  const cashInRegister = useMemo(() => {
-    if (isConsolidated) {
-       return daily_cash_register
-         .filter(r => r.closing_balance === null)
-         .reduce((acc, r) => acc + (r.opening_balance + (r.calculated_sales || 0)), 0)
-    }
-    const activeReg = daily_cash_register.find(r => (r.boutiqueId || 'b1') === activeBoutiqueId && r.closing_balance === null)
-    return activeReg ? (activeReg.opening_balance + (activeReg.calculated_sales || 0)) : 0
-  }, [daily_cash_register, activeBoutiqueId, isConsolidated])
-
-  const totalStockValue = useMemo(() => stockList.reduce((acc, item) => acc + (Number(item.current_stock) * Number(item.price_buy)), 0), [stockList])
-  const totalClientDebts = useMemo(() => clientList.reduce((acc, c) => acc + (Number(c.total_debt) || 0), 0), [clientList])
-  const totalSupplierDebts = useMemo(() => fournisseurList.reduce((acc, f) => acc + (Number(f.total_debt) || 0), 0), [fournisseurList])
+  const {
+    monthlyRevenue,
+    monthlyCOGS,
+    monthlyExpenses,
+    netProfit,
+    marginPercent
+  } = useFinancialStats(activeBoutiqueId, isConsolidated)
 
   const totalAssets = cashInRegister + vault_balance + totalFintech + totalStockValue + totalClientDebts
-  const totalLiquidAssets = cashInRegister + vault_balance + totalFintech
   const netWorth = totalAssets - totalSupplierDebts
 
-  // ─── Rapport Mensuel P&L IA ────────────────────────────────────
   const now = new Date()
-  const currentMonthSales = saleList.filter(s => {
-    const d = new Date(s.date)
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && s.status !== 'cancelled'
-  })
-
-  const monthlyRevenue = currentMonthSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0)
-  
-  // Création d'un dictionnaire de produits pour accélération O(1) au lieu de O(N) dans les boucles
-  const productMap = useMemo(() => {
-    const map = {}
-    stockList.forEach(p => { map[p.id] = Number(p.price_buy) || 0 })
-    return map
-  }, [stockList])
-
-  // COGS : Coût d'achat réel des produits vendus (optimisé avec productMap)
-  const monthlyCOGS = useMemo(() => {
-    return currentMonthSales.reduce((acc, s) => {
-      const saleCost = (s.items || []).reduce((iAcc, item) => {
-        const unitCost = productMap[item.productId] || 0
-        return iAcc + (item.quantity * unitCost)
-      }, 0)
-      return acc + saleCost
-    }, 0)
-  }, [currentMonthSales, productMap])
-
-  const monthlyExpenses = expenseList.filter(e => {
-    const d = new Date(e.date)
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  }).reduce((acc, e) => acc + (Number(e.amount) || 0), 0)
-
-  const grossProfit = monthlyRevenue - monthlyCOGS
-  const netProfit = grossProfit - monthlyExpenses
-  const marginPercent = monthlyRevenue > 0 ? (grossProfit / monthlyRevenue) * 100 : 0
 
   // Données Graphiques
   const assetData = [
@@ -123,6 +64,9 @@ export default function Treasury() {
   ]
 
   const boutiques = useStore(state => state.boutiques) || []
+  const allSales = useStore(state => state.sales) || []
+  const allExpenses = useStore(state => state.expenses) || []
+  const allStock = useStore(state => state.stock) || []
   const boutiqueStats = useMemo(() => {
     if (!isConsolidated) return []
     return boutiques.map(b => {

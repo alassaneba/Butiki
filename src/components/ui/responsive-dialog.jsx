@@ -53,8 +53,8 @@ export function ResponsiveDialogContent({ children, className = '' }) {
   return (
     <VaulDrawer.Portal>
       <VaulDrawer.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
-      <VaulDrawer.Content className={`fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] border border-border bg-card ${className}`}>
-        <div className="mx-auto mt-4 h-1.5 w-12 rounded-full bg-muted" />
+      <VaulDrawer.Content className={`fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[85vh] flex-col rounded-t-[20px] border border-border bg-card ${className}`}>
+        <div className="mx-auto mt-4 h-1.5 w-12 rounded-full bg-muted shrink-0" />
         <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
           {children}
         </div>

@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useStore } from '../store/useStore'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import {
   Plus, Search, X, Eye, MessageCircle, Phone, History,
   Truck, UserPlus, CreditCard, Receipt, ShoppingCart
@@ -112,6 +113,33 @@ export default function Fournisseurs() {
     return listWithActivity.sort((a, b) => new Date(b.lastActionDate) - new Date(a.lastActionDate))
   }, [suppliers, search])
 
+  // Virtualization Setup
+  const [columns, setColumns] = useState(1);
+  useEffect(() => {
+    const updateCols = () => {
+      if (window.innerWidth >= 1024) setColumns(3);
+      else if (window.innerWidth >= 768) setColumns(2);
+      else setColumns(1);
+    };
+    updateCols();
+    window.addEventListener('resize', updateCols);
+    return () => window.removeEventListener('resize', updateCols);
+  }, []);
+
+  const supplierRows = useMemo(() => {
+    const chunks = [];
+    for (let i = 0; i < filteredSuppliers.length; i += columns) {
+      chunks.push(filteredSuppliers.slice(i, i + columns));
+    }
+    return chunks;
+  }, [filteredSuppliers, columns]);
+
+  const rowVirtualizer = useWindowVirtualizer({
+    count: supplierRows.length,
+    estimateSize: () => 140, // Height is smaller for suppliers
+    overscan: 5,
+  });
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-20 will-change-[opacity]">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -168,70 +196,89 @@ export default function Fournisseurs() {
           </div>
 
           {/* Liste des Fournisseurs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
             <AnimatePresence initial={false}>
-              {filteredSuppliers.map((supplier) => (
-                <motion.div 
-                  key={supplier.id} 
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }} 
-                  animate={{ opacity: 1, scale: 1 }} 
-                  exit={{ opacity: 0, scale: 0.95 }} 
-                  transition={{ duration: 0.2 }}
-                  className="card-ultra-compact flex flex-col gap-2 relative overflow-hidden"
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-black text-primary shrink-0">
-                        {supplier.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-black text-sm tracking-tight truncate uppercase">{supplier.name}</h4>
-                          <CatBadge cat={supplier.category} />
-                        </div>
-                        {supplier.phone && (
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <a href={`tel:${supplier.phone}`} className="text-[9px] font-bold text-muted-foreground hover:text-primary flex items-center gap-1"><Phone size={10}/> {supplier.phone}</a>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[8px] font-black uppercase text-muted-foreground/60 mb-0.5">Solde Dû</p>
-                      <p className={`text-sm font-black tracking-tighter ${(supplier.total_debt || 0) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                        {(supplier.total_debt || 0).toLocaleString()} F
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1 flex-wrap">
-                    <button onClick={() => setDetailSupplier(supplier)} className="flex items-center gap-1.5 p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all text-[9px] font-bold uppercase">
-                      <History size={12} /> Détails
-                    </button>
-                    <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
-                      {supplier.phone && (
-                        <a href={`https://wa.me/${supplier.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all" title="Contacter WhatsApp">
-                          <MessageCircle size={14} />
-                        </a>
-                      )}
-                      <button 
-                        onClick={() => handleStartOrder(supplier)} 
-                        className="p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all"
-                        title="Nouvelle Commande"
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const chunk = supplierRows[virtualRow.index];
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={rowVirtualizer.measureElement}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-3"
+                  >
+                    {chunk.map((supplier) => (
+                      <motion.div 
+                        key={supplier.id} 
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }} 
+                        animate={{ opacity: 1, scale: 1 }} 
+                        exit={{ opacity: 0, scale: 0.95 }} 
+                        transition={{ duration: 0.2 }}
+                        className="card-ultra-compact flex flex-col gap-2 relative overflow-hidden"
                       >
-                        <ShoppingCart size={14} />
-                      </button>
-                      <button onClick={() => setActiveSupplier({ type: 'pay', ...supplier })} disabled={(supplier.total_debt || 0) <= 0} className="btn-ultra-compact bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white disabled:opacity-30 disabled:hover:bg-emerald-500/10 disabled:hover:text-emerald-600">PAYER</button>
-                      <button onClick={() => setActiveSupplier({ type: 'debt', ...supplier })} className="btn-ultra-compact bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white">+ DETTE</button>
-                    </div>
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-black text-primary shrink-0">
+                              {supplier.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h4 className="font-black text-sm tracking-tight truncate uppercase">{supplier.name}</h4>
+                                <CatBadge cat={supplier.category} />
+                              </div>
+                              {supplier.phone && (
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <a href={`tel:${supplier.phone}`} className="text-[9px] font-bold text-muted-foreground hover:text-primary flex items-center gap-1"><Phone size={10}/> {supplier.phone}</a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-[8px] font-black uppercase text-muted-foreground/60 mb-0.5">Solde Dû</p>
+                            <p className={`text-sm font-black tracking-tighter ${(supplier.total_debt || 0) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                              {(supplier.total_debt || 0).toLocaleString()} F
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1 flex-wrap">
+                          <button onClick={() => setDetailSupplier(supplier)} className="flex items-center gap-1.5 p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all text-[9px] font-bold uppercase">
+                            <History size={12} /> Détails
+                          </button>
+                          <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
+                            {supplier.phone && (
+                              <a href={`https://wa.me/${supplier.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all" title="Contacter WhatsApp">
+                                <MessageCircle size={14} />
+                              </a>
+                            )}
+                            <button 
+                              onClick={() => handleStartOrder(supplier)} 
+                              className="p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all"
+                              title="Nouvelle Commande"
+                            >
+                              <ShoppingCart size={14} />
+                            </button>
+                            <button onClick={() => setActiveSupplier({ type: 'pay', ...supplier })} disabled={(supplier.total_debt || 0) <= 0} className="btn-ultra-compact bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white disabled:opacity-30 disabled:hover:bg-emerald-500/10 disabled:hover:text-emerald-600">PAYER</button>
+                            <button onClick={() => setActiveSupplier({ type: 'debt', ...supplier })} className="btn-ultra-compact bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white">+ DETTE</button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </motion.div>
-              ))}
+                )
+              })}
             </AnimatePresence>
             
             {filteredSuppliers.length === 0 && (
-              <div className="col-span-full py-10 text-center bg-muted/10 rounded-2xl border border-dashed border-border/50">
+              <div className="col-span-full py-10 text-center bg-muted/10 rounded-2xl border border-dashed border-border/50 absolute top-0 left-0 w-full">
                 <Truck className="mx-auto text-muted-foreground opacity-10 mb-2" size={32} />
                 <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Aucun partenaire trouvé</p>
               </div>

@@ -4,7 +4,9 @@ import {
   Calendar, ShoppingBag, Wallet, Users,
   BarChart3, PieChart, Activity
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useStore } from '../store/useStore'
+import { useFinancialStats, useStockStats } from '../store/financialSelectors'
 import { useShallow } from 'zustand/react/shallow'
 import clsx from 'clsx'
 
@@ -38,36 +40,26 @@ const StatCard = ({ title, value, subValue, trend, icon: Icon, color }) => (
 )
 
 export default function PrevisionsPage() {
-  const transactions = useStore(state => state.transactions) || []
+  const allSales = useStore(state => state.sales) || []
   const stock = useStore(state => state.stock) || []
   const clients = useStore(state => state.clients) || []
+  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
+
+  const finStats = useFinancialStats(activeBoutiqueId)
+  const stockStats = useStockStats(activeBoutiqueId)
 
   const stats = useMemo(() => {
-    const now = new Date()
-    const thisMonth = now.getMonth()
-    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1
-    
-    const monthlySales = transactions.filter(t => 
-      t.type === 'vente' && new Date(t.date).getMonth() === thisMonth
-    ).reduce((sum, t) => sum + (t.amount || 0), 0)
-
-    const prevMonthlySales = transactions.filter(t => 
-      t.type === 'vente' && new Date(t.date).getMonth() === lastMonth
-    ).reduce((sum, t) => sum + (t.amount || 0), 0)
-
-    const trend = prevMonthlySales === 0 ? 0 : Math.round(((monthlySales - prevMonthlySales) / prevMonthlySales) * 100)
-
-    const totalStockValue = stock.reduce((sum, item) => sum + (item.current_stock * (item.buying_price || 0)), 0)
-    const activeClients = clients.filter(c => (c.transactions?.length || 0) > 0).length
+    const activeBoutiqueClients = clients.filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId)
+    const activeClients = activeBoutiqueClients.filter(c => (c.transactions?.length || 0) > 0).length
 
     return {
-      monthlySales,
-      trend,
-      totalStockValue,
+      monthlySales: finStats.monthlyRevenue,
+      trend: finStats.monthlyTrend,
+      totalStockValue: stockStats.totalStockValue,
       activeClients,
-      inventoryCount: stock.length
+      inventoryCount: stockStats.totalItems
     }
-  }, [transactions, stock, clients])
+  }, [clients, activeBoutiqueId, finStats, stockStats])
 
   return (
     <div className="space-y-6 pb-20">
@@ -142,7 +134,10 @@ export default function PrevisionsPage() {
           <p className="text-sm font-medium text-muted-foreground mt-3 leading-relaxed">
             Vos ventes de produits frais ont augmenté de 12% cette semaine. Pensez à augmenter le stock de sécurité sur ces références pour éviter les ruptures le week-end prochain.
           </p>
-          <button className="mt-6 px-6 py-3 bg-primary text-primary-foreground rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/25 active:scale-95 transition-all hover:translate-x-1">
+          <button 
+            onClick={() => toast.success("Analyse d'optimisation en cours...", { description: "Génération automatique des recommandations de réapprovisionnement." })}
+            className="mt-6 px-6 py-3 bg-primary text-primary-foreground rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/25 active:scale-95 transition-all hover:translate-x-1"
+          >
             Optimiser mon stock
           </button>
         </div>

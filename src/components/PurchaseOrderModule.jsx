@@ -20,14 +20,14 @@ function formatDate(isoString) {
 export default function PurchaseOrderModule() {
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
   const suppliers = useStore(state => state.suppliers)
-  const allStock = useStore(state => state.stock || [])
-  const allPurchaseOrders = useStore(state => state.purchase_orders || [])
+  const allStock = useStore(state => state.stock) || []
+  const allPurchaseOrders = useStore(state => state.purchase_orders) || []
   const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
   const purchase_orders = useMemo(() => allPurchaseOrders.filter(o => (o.boutiqueId || 'b1') === activeBoutiqueId), [allPurchaseOrders, activeBoutiqueId])
   const createPurchaseOrder = useStore(state => state.createPurchaseOrder)
   const updatePurchaseOrderStatus = useStore(state => state.updatePurchaseOrderStatus)
   const deletePurchaseOrder = useStore(state => state.deletePurchaseOrder)
-  const procurement_cart = useStore(state => state.procurement_cart || [])
+  const procurement_cart = useStore(state => state.procurement_cart) || []
   const clearProcurementCart = useStore(state => state.clearProcurementCart)
   const [isCreating, setIsCreating] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState('')
@@ -197,14 +197,14 @@ export default function PurchaseOrderModule() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h3 className="text-xl font-black tracking-tighter flex items-center gap-3 uppercase"><ShoppingCart size={20} className="text-primary" /> Commandes</h3>
         <button 
           onClick={() => {
             setIsCreating(true)
             setItems([])
           }}
-          className="bg-primary text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+          className="w-full sm:w-auto flex justify-center items-center gap-2 bg-primary text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
         >
           <Plus size={18} /> Nouvelle Commande
         </button>

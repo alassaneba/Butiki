@@ -1,5 +1,9 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/useStore'
+import { useShallow } from 'zustand/react/shallow'
+import { StatBox } from '../components/ui/StatBox'
+import { Card } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
 import { 
   TrendingUp, Users, Package, ShoppingCart, 
   ArrowUpRight, ArrowDownRight, Calendar,
@@ -7,6 +11,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useFinancialStats, useStockStats, useTreasuryStats } from '../store/financialSelectors'
 import SmartAdvisor from '../components/SmartAdvisor'
 import { CustomAreaChart } from '../components/ui/Charts'
 import { getLoyaltyLevel } from '../lib/crm'
@@ -41,15 +46,12 @@ function StatCard({ title, value, sub, icon: Icon, color, trend, trendValue, del
             )}
             <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground">{sub}</p>
           </div>
-
+          
           {extra && (
             <div className="mt-2 pt-2 border-t border-border/50">
               {extra}
             </div>
           )}
-        </div>
-        <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${color} bg-opacity-10 shrink-0 group-hover:scale-110 transition-transform`}>
-          <Icon size={16} sm:size={20} className={color.replace('bg-', 'text-')} />
         </div>
       </div>
     </motion.div>
@@ -57,17 +59,22 @@ function StatCard({ title, value, sub, icon: Icon, color, trend, trendValue, del
 }
 
 function SystemHealth() {
-  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const allStock = useStore(state => state.stock) || []
-  const allInventoryHistory = useStore(state => state.inventory_history) || []
-  
-  const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
-  const inventory_history = useMemo(() => allInventoryHistory.filter(h => (h.boutiqueId || 'b1') === activeBoutiqueId), [allInventoryHistory, activeBoutiqueId])
-  
-  const lastInventory = inventory_history[0] ? new Date(inventory_history[0].date).toLocaleDateString() : 'Jamais'
+  const { lastInventory, stockLength } = useStore(useShallow(state => {
+    const activeBoutiqueId = state.activeBoutiqueId
+    const history = state.inventory_history || []
+    const stock = state.stock || []
+    
+    const filteredHistory = history.filter(h => (h.boutiqueId || 'b1') === activeBoutiqueId)
+    const filteredStock = stock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId)
+    
+    return {
+      lastInventory: filteredHistory[0] ? new Date(filteredHistory[0].date).toLocaleDateString() : 'Jamais',
+      stockLength: filteredStock.length
+    }
+  }))
   
   return (
-    <div className="card-ultra-compact border border-border/50 bg-card shadow-premium">
+    <Card className="p-3 sm:p-4">
       <div className="flex items-center gap-2 mb-4">
         <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
           <Activity size={18} />
@@ -81,7 +88,7 @@ function SystemHealth() {
             <Cloud size={14} className="text-emerald-500" />
             Synchronisation Cloud
           </div>
-          <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20">ACTIF</span>
+          <Badge variant="softSuccess">ACTIF</Badge>
         </div>
         
         <div className="flex items-center justify-between">
@@ -98,30 +105,33 @@ function SystemHealth() {
                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Dernier Inventaire</p>
                  <p className="text-xs font-black">{lastInventory}</p>
               </div>
-              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{stock.length} Articles</p>
+              <Badge variant="outline">{stockLength} Articles</Badge>
            </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }
 
 function ModuleSyncStatus() {
-  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const breadLogs = useStore(state => state.bread_logs) || []
-  const gasLogs = useStore(state => state.gas_logs) || []
-  const creditLogs = useStore(state => state.credit_logs) || []
-  
-  const today = new Date().toLocaleDateString()
-  
-  const modules = [
-    { id: 'pain', label: 'Pain', active: breadLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
-    { id: 'gaz', label: 'Gaz', active: gasLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
-    { id: 'credit', label: 'Crédit', active: creditLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
-  ]
+  const { activeBoutiqueId, breadLogs, gasLogs, creditLogs } = useStore(useShallow(state => ({
+    activeBoutiqueId: state.activeBoutiqueId,
+    breadLogs: state.bread_logs || [],
+    gasLogs: state.gas_logs || [],
+    creditLogs: state.credit_logs || []
+  })))
+
+  const modules = useMemo(() => {
+    const today = new Date().toLocaleDateString()
+    return [
+      { id: 'pain', label: 'Pain', active: breadLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
+      { id: 'gaz', label: 'Gaz', active: gasLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
+      { id: 'credit', label: 'Crédit', active: creditLogs.some(l => new Date(l.date).toLocaleDateString() === today && (l.boutiqueId || 'b1') === activeBoutiqueId) },
+    ]
+  }, [activeBoutiqueId, breadLogs, gasLogs, creditLogs])
 
   return (
-    <div className="card-ultra-compact border border-border/50 bg-card/30 backdrop-blur-md">
+    <Card className="p-3 bg-card/30 backdrop-blur-md">
       <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-3">Activité des Modules</h3>
       <div className="grid grid-cols-3 gap-2">
         {modules.map(m => (
@@ -134,25 +144,28 @@ function ModuleSyncStatus() {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }
 
 function LoyaltyWidget() {
-  const allClients = useStore(state => state.clients) || []
-  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  
+  const { allClients, activeBoutiqueId } = useStore(useShallow(state => ({
+    allClients: state.clients || [],
+    activeBoutiqueId: state.activeBoutiqueId
+  })))
+
   const topClients = useMemo(() => {
     return allClients
       .filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId && c.loyalty_points > 0)
       .sort((a, b) => (b.loyalty_points || 0) - (a.loyalty_points || 0))
       .slice(0, 3)
+      .map(c => ({ id: c.id, name: c.name, loyalty_points: c.loyalty_points }))
   }, [allClients, activeBoutiqueId])
 
   if (topClients.length === 0) return null
 
   return (
-    <div className="card-ultra-compact border border-border/50 bg-amber-500/5 backdrop-blur-md">
+    <Card className="p-4 border-amber-500/20 bg-amber-500/5 backdrop-blur-md">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-600 flex items-center gap-2">
           <Trophy size={12} /> Top Ambassadeurs
@@ -180,83 +193,38 @@ function LoyaltyWidget() {
           )
         })}
       </div>
-    </div>
+    </Card>
   )
 }
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const all_daily_cash_register = useStore(state => state.daily_cash_register) || []
-  const allSales = useStore(state => state.sales) || []
-  const allExpenses = useStore(state => state.expenses) || []
-  const allStock = useStore(state => state.stock) || []
-  const allClients = useStore(state => state.clients) || []
   const config = useStore(state => state.config)
+  const formatF = (val) => val.toLocaleString() + ' F'
 
-  const daily_cash_register = useMemo(() => all_daily_cash_register.filter(r => (r.boutiqueId || 'b1') === activeBoutiqueId), [all_daily_cash_register, activeBoutiqueId])
+  const { allSales, all_daily_cash_register } = useStore(useShallow(state => ({
+    allSales: state.sales || [],
+    all_daily_cash_register: state.daily_cash_register || []
+  })))
+
   const sales = useMemo(() => allSales.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allSales, activeBoutiqueId])
-  const expenses = useMemo(() => allExpenses.filter(e => (e.boutiqueId || 'b1') === activeBoutiqueId), [allExpenses, activeBoutiqueId])
-  const stock = useMemo(() => allStock.filter(s => (s.boutiqueId || 'b1') === activeBoutiqueId), [allStock, activeBoutiqueId])
-  const clients = useMemo(() => allClients.filter(c => (c.boutiqueId || 'b1') === activeBoutiqueId), [allClients, activeBoutiqueId])
+  const daily_cash_register = useMemo(() => all_daily_cash_register.filter(r => (r.boutiqueId || 'b1') === activeBoutiqueId), [all_daily_cash_register, activeBoutiqueId])
 
-  // -- Calculs Stat --
-  const stats = useMemo(() => {
-    const today = new Date().toLocaleDateString()
-    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString()
+  const finStats = useFinancialStats(activeBoutiqueId)
+  const stockStats = useStockStats(activeBoutiqueId)
+  const treasuryStats = useTreasuryStats(activeBoutiqueId)
 
-    // Somme des ventes POS pour aujourd'hui (Exclure les annulées)
-    const activeSales = sales.filter(s => s.status !== 'cancelled')
-    
-    const posSalesToday = activeSales
-      .filter(s => new Date(s.date).toLocaleDateString() === today)
-      .reduce((sum, s) => sum + (s.totalAmount || 0), 0)
+  const stats = useMemo(() => ({
+    todaySales: finStats.todaySales,
+    salesTrend: finStats.salesTrend,
+    totalDebt: treasuryStats.totalClientDebts,
+    criticalStock: stockStats.criticalStock,
+    loggedSales: finStats.loggedSales,
+    manualSales: finStats.manualSales
+  }), [finStats, stockStats, treasuryStats])
 
-    const posSalesYesterday = activeSales
-      .filter(s => new Date(s.date).toLocaleDateString() === yesterday)
-      .reduce((sum, s) => sum + (s.totalAmount || 0), 0)
-
-    const todayReg = daily_cash_register.find(r => r.date && new Date(r.date).toLocaleDateString() === today)
-    const yesterdayReg = daily_cash_register.find(r => r.date && new Date(r.date).toLocaleDateString() === yesterday)
-
-    // Calcul du montant des annulations pour aujourd'hui dans les dépenses
-    const cancellationsToday = expenses
-      .filter(e => e.category === 'annulation_vente' && new Date(e.date).toLocaleDateString() === today)
-      .reduce((sum, e) => sum + (e.amount || 0), 0)
-
-    // CA Loggué = Toutes les ventes POS
-    const loggedSales = posSalesToday
-    
-    // CA Manuel (Caisse) = Écart positif ou ventes déclarées manuellement
-    // Si calculated_sales est positif, c'est du CA additionnel (ventes hors POS)
-    // Si c'est négatif, c'est un manquant de caisse
-    const manualSales = todayReg?.calculated_sales || 0
-    
-    const todaySales = loggedSales + Math.max(0, manualSales)
-    const yesterdaySales = posSalesYesterday + Math.max(0, yesterdayReg?.calculated_sales || 0)
-    
-    let salesTrend = 0
-    if (yesterdaySales > 0) {
-      salesTrend = ((todaySales - yesterdaySales) / yesterdaySales) * 100
-    }
-
-    const totalDebt = (clients || []).reduce((acc, c) => acc + (c.total_debt || 0), 0)
-    const criticalStock = stock.filter(s => s.current_stock <= (s.alert_threshold || 10)).length
-
-    return { 
-      todaySales, 
-      salesTrend, 
-      totalDebt, 
-      criticalStock, 
-      loggedSales, 
-      manualSales,
-      hasDiscrepancy: manualSales < 0 
-    }
-  }, [daily_cash_register, sales, stock, clients, expenses])
-
-  // -- Données Graphique --
   const chartData = useMemo(() => {
-    // On récupère les 7 derniers jours (y compris aujourd'hui) de manière robuste
     const days = []
     for (let i = 6; i >= 0; i--) {
       const d = new Date()
@@ -269,43 +237,17 @@ export default function Dashboard() {
 
     return days.map(dateObj => {
       const dayIso = dateObj.toISOString().split('T')[0]
-      
-      const posSales = activeSales
-        .filter(s => {
-          try {
-            return new Date(s.date).toISOString().split('T')[0] === dayIso
-          } catch { return false }
-        })
-        .reduce((sum, s) => sum + (s.totalAmount || 0), 0)
-      
-      const reg = daily_cash_register.find(r => {
-        try {
-          return r.date && new Date(r.date).toISOString().split('T')[0] === dayIso
-        } catch { return false }
-      })
-      const caValue = posSales + (reg?.calculated_sales || 0)
-
+      const posSales = activeSales.filter(s => new Date(s.date).toISOString().split('T')[0] === dayIso).reduce((sum, s) => sum + (s.totalAmount || 0), 0)
+      const reg = daily_cash_register.find(r => r.date && new Date(r.date).toISOString().split('T')[0] === dayIso)
       return {
-        name: dateObj.toLocaleDateString('fr-FR', { weekday: 'short' }),
-        value: caValue,
-        fullDate: dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+        day: dateObj.toLocaleDateString('fr-FR', { weekday: 'short' }),
+        sales: posSales + (reg?.calculated_sales || 0)
       }
     })
   }, [daily_cash_register, sales])
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-  }
-
   return (
-    <motion.div 
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="space-y-4 sm:space-y-6 max-w-6xl mx-auto pb-6 sm:pb-10"
-    >
-      {/* Header */}
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight uppercase italic flex items-center gap-2">
@@ -319,42 +261,43 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard 
-          title="Ventes Jour" 
-          value={`${stats.todaySales.toLocaleString()} F`} 
-          sub="CA du jour" 
-          icon={ShoppingCart} 
-          color="bg-primary"
-          trend={stats.salesTrend !== 0 ? (stats.salesTrend > 0 ? 'up' : 'down') : null}
-          trendValue={`${Math.abs(stats.salesTrend).toFixed(1)}%`}
-          delay={0.1}
-          extra={(
-            <div className="space-y-1.5">
-               <div className="flex justify-between items-center text-[9px] font-black uppercase">
-                  <span className="text-muted-foreground">Logguées (POS)</span>
-                  <span className="text-primary">{stats.loggedSales.toLocaleString()} F</span>
-               </div>
-               <div className="w-full h-1 bg-muted rounded-full overflow-hidden flex">
-                  <div 
-                    className="h-full bg-primary" 
-                    style={{ width: `${(stats.loggedSales / (stats.todaySales || 1)) * 100}%` }} 
-                  />
-                  <div 
-                    className={clsx("h-full opacity-50", stats.manualSales >= 0 ? "bg-orange-500" : "bg-destructive")} 
-                    style={{ width: `${(Math.abs(stats.manualSales) / (stats.todaySales || 1)) * 100}%` }} 
-                  />
-               </div>
-               <div className="flex justify-between items-center text-[9px] font-black uppercase">
-                  <span className="text-muted-foreground">{stats.manualSales >= 0 ? 'Hors POS / Surplus' : 'Manquant Caisse'}</span>
-                  <span className={stats.manualSales >= 0 ? 'text-orange-500' : 'text-destructive'}>
-                    {Math.abs(stats.manualSales).toLocaleString()} F
-                  </span>
-               </div>
-            </div>
-          )}
-        />
+        <div className="col-span-2 lg:col-span-1">
+          <StatCard 
+            title="Ventes Jour" 
+            value={`${stats.todaySales.toLocaleString()} F`} 
+            sub="CA du jour" 
+            icon={ShoppingCart} 
+            color="bg-primary"
+            trend={stats.salesTrend !== 0 ? (stats.salesTrend > 0 ? 'up' : 'down') : null}
+            trendValue={`${Math.abs(stats.salesTrend).toFixed(1)}%`}
+            delay={0.1}
+            extra={(
+              <div className="space-y-1.5">
+                 <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                    <span className="text-muted-foreground">Logguées (POS)</span>
+                    <span className="text-primary">{stats.loggedSales.toLocaleString()} F</span>
+                 </div>
+                 <div className="w-full h-1 bg-muted rounded-full overflow-hidden flex">
+                    <div 
+                      className="h-full bg-primary" 
+                      style={{ width: `${(stats.loggedSales / (stats.todaySales || 1)) * 100}%` }} 
+                    />
+                    <div 
+                      className={clsx("h-full opacity-50", stats.manualSales >= 0 ? "bg-orange-500" : "bg-destructive")} 
+                      style={{ width: `${(Math.abs(stats.manualSales) / (stats.todaySales || 1)) * 100}%` }} 
+                    />
+                 </div>
+                 <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                    <span className="text-muted-foreground">{stats.manualSales >= 0 ? 'Hors POS / Surplus' : 'Manquant Caisse'}</span>
+                    <span className={stats.manualSales >= 0 ? 'text-orange-500' : 'text-destructive'}>
+                      {Math.abs(stats.manualSales).toLocaleString()} F
+                    </span>
+                 </div>
+              </div>
+            )}
+          />
+        </div>
         <StatCard 
           title="Stock Critique" 
           value={stats.criticalStock} 
@@ -438,6 +381,6 @@ export default function Dashboard() {
           <SystemHealth />
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

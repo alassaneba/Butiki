@@ -7,6 +7,7 @@ import {
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import { useStore } from '../store/useStore'
+import { useShallow } from 'zustand/react/shallow'
 
 const navItems = [
   { section: 'Principal' },
@@ -16,11 +17,11 @@ const navItems = [
   { path: '/historique', label: 'Historique Caisses', icon: History },
   
   { section: 'Approvisionnement' },
-  { path: '/stock', label: 'Stock Total', icon: Package },
-  { path: '/inventaire', label: 'Inventaire Péri.', icon: ClipboardCheck },
+  { path: '/achat', label: 'Achats Fournisseurs', icon: ShoppingBag },
   { path: '/procurement', label: 'Assistant Réappro', icon: ShoppingCart, badge: 'AUTO' },
   { path: '/stats', label: 'Analyses & Prévisions', icon: TrendingUp },
-  { path: '/achat', label: 'Achats Fournisseurs', icon: ShoppingBag },
+  { path: '/stock', label: 'Stock Total', icon: Package },
+  { path: '/inventaire', label: 'Inventaire Péri.', icon: ClipboardCheck },
   
   { section: 'Modules Spécialisés' },
   { path: '/pain', label: 'Gestion Pain', icon: Croissant },
@@ -34,12 +35,12 @@ const navItems = [
   
   { section: 'Gestion Avancée' },
   { path: '/tresorerie', label: 'Trésorerie Nette', icon: Landmark },
-  { path: '/rh', label: 'RH & Paie', icon: Banknote, badge: 'PRO' },
-  { path: '/audit', label: 'Journal d\'Audit', icon: ShieldCheck },
-  { path: '/catalogue', label: 'Menu Digital', icon: ShoppingBag, badge: 'CLIENT' },
-  { path: '/boutiques', label: 'Multi-Boutiques', icon: Building2, badge: 'PRO' },
   { path: '/depot', label: 'Coffre (Dépôt)', icon: PiggyBank },
   { path: '/charges', label: 'Charges Fixes', icon: Home },
+  { path: '/rh', label: 'RH & Paie', icon: Banknote, badge: 'PRO' },
+  { path: '/boutiques', label: 'Multi-Boutiques', icon: Building2, badge: 'PRO' },
+  { path: '/catalogue', label: 'Menu Digital', icon: ShoppingBag, badge: 'CLIENT' },
+  { path: '/audit', label: 'Journal d\'Audit', icon: ShieldCheck },
   
   { section: 'Système' },
   { path: '/users', label: 'Équipe / Rôles', icon: UsersRound },
@@ -48,13 +49,16 @@ const navItems = [
 
 export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const location = useLocation()
-  const notifications = useStore(state => state.notifications)
+  
+  const unreadCount = useStore(state => (state.notifications || []).filter(n => !n.read).length)
   const config = useStore(state => state.config)
-  const activeUser = useStore(state => state.users.find(u => u.id === state.activeUserId))
-  const boutiques = useStore(state => state.boutiques)
-  const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
-  const activeBoutique = (boutiques || []).find(b => b.id === activeBoutiqueId)
-  const unreadCount = (notifications || []).filter(n => !n.read).length
+  
+  const { activeUser, activeBoutique, activeBoutiqueId, boutiques } = useStore(useShallow(state => ({
+    activeUser: state.users.find(u => u.id === state.activeUserId),
+    activeBoutique: (state.boutiques || []).find(b => b.id === state.activeBoutiqueId),
+    activeBoutiqueId: state.activeBoutiqueId,
+    boutiques: state.boutiques || []
+  })))
 
   const filteredNavItems = navItems.filter(item => {
     // Si c'est une section, on l'affiche toujours (elle sera filtrée par ses enfants si vide, mais ici on simplifie)

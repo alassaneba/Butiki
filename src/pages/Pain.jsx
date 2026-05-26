@@ -159,9 +159,11 @@ export default function Pain() {
                           </div>
                           <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">{timeLabel} • {log.received_quantity} miches</p>
                         </div>
-                        <div className="flex -space-x-2">
+                        <div className="flex gap-1 flex-wrap justify-end">
                            {[q1, q2, q3, q4].map((q, i) => q > 0 && (
-                             <div key={i} className="w-8 h-8 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-[9px] font-black text-primary">Q{i+1}</div>
+                             <div key={i} className="px-2.5 h-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[9px] font-black text-primary shadow-sm whitespace-nowrap">
+                               Q{i+1}={q}
+                             </div>
                            ))}
                         </div>
                       </div>

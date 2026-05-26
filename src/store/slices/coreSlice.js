@@ -215,6 +215,73 @@ export const createCoreSlice = (set, get) => ({
     set({ activeBoutiqueId: id })
   },
 
+  deleteBoutique: (id, transferStock = false) => {
+    if (id === 'b1') return; // Sécurité : on ne supprime jamais la boutique principale
+    const state = get()
+    if (state.boutiques.length <= 1) return; // Sécurité : il faut au moins une boutique
+    
+    const boutiqueToDelete = state.boutiques.find(b => b.id === id)
+    get().logAction('Multi-Boutique', `Boutique ${boutiqueToDelete?.name} supprimée. Transfert stock: ${transferStock ? 'Oui' : 'Non'}`)
+
+    // 1. Transfert de stock optionnel
+    let newStock = [...(state.stock || [])]
+    if (transferStock) {
+      const stockToTransfer = newStock.filter(s => (s.boutiqueId || 'b1') === id)
+      stockToTransfer.forEach(item => {
+        if (item.current_stock > 0) {
+          // Chercher si l'item existe déjà dans b1
+          const existingInB1 = newStock.find(s => s.barcode === item.barcode && (s.boutiqueId || 'b1') === 'b1')
+          if (existingInB1) {
+            existingInB1.current_stock += item.current_stock
+          } else {
+            // Créer le produit dans b1
+            newStock.push({ ...item, id: crypto.randomUUID(), boutiqueId: 'b1' })
+          }
+        }
+      })
+    }
+
+    // 2. Nettoyage en cascade (on enlève toutes les données liées à `id`)
+    set({
+      boutiques: state.boutiques.filter(b => b.id !== id),
+      activeBoutiqueId: state.activeBoutiqueId === id ? 'b1' : state.activeBoutiqueId,
+      
+      // Stock
+      stock: newStock.filter(s => (s.boutiqueId || 'b1') !== id),
+      stock_logs: (state.stock_logs || []).filter(l => (l.boutiqueId || 'b1') !== id),
+      inventory_history: (state.inventory_history || []).filter(h => (h.boutiqueId || 'b1') !== id),
+      
+      // Ventes
+      sales: (state.sales || []).filter(s => (s.boutiqueId || 'b1') !== id),
+      
+      // Finance
+      expenses: (state.expenses || []).filter(e => (e.boutiqueId || 'b1') !== id),
+      inflows: (state.inflows || []).filter(i => (i.boutiqueId || 'b1') !== id),
+      daily_cash_register: (state.daily_cash_register || []).filter(r => (r.boutiqueId || 'b1') !== id),
+      fixed_charges: (state.fixed_charges || []).filter(f => (f.boutiqueId || 'b1') !== id),
+      debt_payments: (state.debt_payments || []).filter(p => (p.boutiqueId || 'b1') !== id),
+      
+      // Personnes
+      clients: (state.clients || []).filter(c => (c.boutiqueId || 'b1') !== id),
+      suppliers: (state.suppliers || []).filter(s => (s.boutiqueId || 'b1') !== id),
+      supplier_evaluations: (state.supplier_evaluations || []).filter(e => (e.boutiqueId || 'b1') !== id),
+      
+      // Modules
+      purchase_orders: (state.purchase_orders || []).filter(p => (p.boutiqueId || 'b1') !== id),
+      bread_logs: (state.bread_logs || []).filter(b => (b.boutiqueId || 'b1') !== id),
+      gas_logs: (state.gas_logs || []).filter(g => (g.boutiqueId || 'b1') !== id),
+      credit_logs: (state.credit_logs || []).filter(c => (c.boutiqueId || 'b1') !== id),
+      deliveries: (state.deliveries || []).filter(d => (d.boutiqueId || 'b1') !== id),
+      delivery_staff: (state.delivery_staff || []).filter(d => (d.boutiqueId || 'b1') !== id),
+      
+      // RH
+      staff_profiles: (state.staff_profiles || []).filter(p => (p.boutiqueId || 'b1') !== id),
+      attendance_logs: (state.attendance_logs || []).filter(a => (a.boutiqueId || 'b1') !== id),
+      salary_advances: (state.salary_advances || []).filter(s => (s.boutiqueId || 'b1') !== id),
+      payroll_history: (state.payroll_history || []).filter(p => (p.boutiqueId || 'b1') !== id)
+    })
+  },
+
   // ── Audit Trail ────────────────────────────────────────────────
   logAction: (action, details = '') => set((state) => {
     const user = state.users.find(u => u.id === state.activeUserId)

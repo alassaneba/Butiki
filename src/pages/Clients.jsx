@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import {
   Plus, Search, Printer, Eye, X,
   MessageCircle, Phone, Star, UserCheck, TriangleAlert, UserPlus,
@@ -318,6 +319,33 @@ export default function Clients() {
     })
   }, [clientList, saleList, search, filterTag, filterType, revenueByClient])
 
+  // Virtualization Responsive Grid Setup
+  const [columns, setColumns] = useState(1);
+  useEffect(() => {
+    const updateCols = () => {
+      if (window.innerWidth >= 1024) setColumns(3);
+      else if (window.innerWidth >= 768) setColumns(2);
+      else setColumns(1);
+    };
+    updateCols();
+    window.addEventListener('resize', updateCols);
+    return () => window.removeEventListener('resize', updateCols);
+  }, []);
+
+  const clientRows = useMemo(() => {
+    const chunks = [];
+    for (let i = 0; i < filteredClients.length; i += columns) {
+      chunks.push(filteredClients.slice(i, i + columns));
+    }
+    return chunks;
+  }, [filteredClients, columns]);
+
+  const rowVirtualizer = useWindowVirtualizer({
+    count: clientRows.length,
+    estimateSize: () => 192, // ~180px + gap
+    overscan: 5,
+  });
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-20 will-change-[opacity]">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
@@ -395,138 +423,156 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* Liste des Clients Format Fournisseur */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 print:hidden">
+      <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
         <AnimatePresence initial={false}>
-          {filteredClients.map((client) => {
-            const limit = client.credit_limit || 0
-            const ratio = limit > 0 ? ((client.total_debt || 0) / limit) * 100 : 0
-            
-            // CRM Data
-            const level = getLoyaltyLevel(client.loyalty_points || 0)
-            const next = getNextLevelProgress(client.loyalty_points || 0)
-
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const chunk = clientRows[virtualRow.index];
             return (
-              <motion.div 
-                key={client.id}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className={`card-ultra-compact flex flex-col gap-2 relative overflow-hidden transition-all ${limit > 0 && ratio >= 80 ? 'border-orange-500/30 bg-orange-500/5' : 'border-border/50 bg-card hover:shadow-md'}`}
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-3 print:hidden"
               >
-                {/* Level Badge Overlay */}
-                <div className={clsx("absolute top-0 right-0 px-3 py-1 rounded-bl-2xl text-[7px] font-black uppercase tracking-widest flex items-center gap-1", level.bg, level.color)}>
-                  {level.icon} {level.name}
-                </div>
+                {chunk.map((client) => {
+                  const limit = client.credit_limit || 0
+                  const ratio = limit > 0 ? ((client.total_debt || 0) / limit) * 100 : 0
+                  
+                  // CRM Data
+                  const level = getLoyaltyLevel(client.loyalty_points || 0)
+                  const next = getNextLevelProgress(client.loyalty_points || 0)
 
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 shadow-sm", level.bg, level.color)}>
-                      {client.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <h4 className="font-black text-sm tracking-tight truncate uppercase leading-none pr-12">{client.name}</h4>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleCycleTag(client); }} 
-                          className="hover:scale-105 active:scale-95 transition-all outline-none"
-                          title="Changer le segment"
-                        >
-                          <TagBadge tag={client.tag} />
-                        </button>
-                        {client.isInactive && (
-                          <div className="bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md text-[8px] font-black flex items-center gap-1 uppercase animate-pulse">
-                             <Clock size={8} /> Inactif
-                          </div>
-                        )}
+                  return (
+                    <motion.div 
+                      key={client.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className={`card-ultra-compact flex flex-col gap-2 relative overflow-hidden transition-all ${limit > 0 && ratio >= 80 ? 'border-orange-500/30 bg-orange-500/5' : 'border-border/50 bg-card hover:shadow-md'}`}
+                    >
+                      {/* Level Badge Overlay */}
+                      <div className={clsx("absolute top-0 right-0 px-3 py-1 rounded-bl-2xl text-[7px] font-black uppercase tracking-widest flex items-center gap-1", level.bg, level.color)}>
+                        {level.icon} {level.name}
                       </div>
-                      {client.phone && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <a 
-                            href={`tel:${client.phone.replace(/\s/g, '')}`} 
-                            className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 group"
-                            title="Appeler le client"
-                          >
-                            <Phone size={10} className="group-hover:scale-110 transition-transform" /> 
-                            <span>{client.phone}</span>
-                          </a>
-                          <a 
-                            href={`https://wa.me/${client.phone.replace(/\D/g, '')}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-emerald-500 hover:scale-125 transition-transform p-0.5"
-                            title="Contacter par WhatsApp"
-                          >
-                            <MessageCircle size={12} fill="currentColor" className="opacity-20 group-hover:opacity-100" />
-                          </a>
+
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 shadow-sm", level.bg, level.color)}>
+                            {client.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-black text-sm tracking-tight truncate uppercase leading-none pr-12">{client.name}</h4>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleCycleTag(client); }} 
+                                className="hover:scale-105 active:scale-95 transition-all outline-none"
+                                title="Changer le segment"
+                              >
+                                <TagBadge tag={client.tag} />
+                              </button>
+                              {client.isInactive && (
+                                <div className="bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md text-[8px] font-black flex items-center gap-1 uppercase animate-pulse">
+                                   <Clock size={8} /> Inactif
+                                </div>
+                              )}
+                            </div>
+                            {client.phone && (
+                              <div className="flex items-center gap-2 mt-1">
+                                <a 
+                                  href={`tel:${client.phone.replace(/\s/g, '')}`} 
+                                  className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 group"
+                                  title="Appeler le client"
+                                >
+                                  <Phone size={10} className="group-hover:scale-110 transition-transform" /> 
+                                  <span>{client.phone}</span>
+                                </a>
+                                <a 
+                                  href={`https://wa.me/${client.phone.replace(/\D/g, '')}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-emerald-500 hover:scale-125 transition-transform p-0.5"
+                                  title="Contacter par WhatsApp"
+                                >
+                                  <MessageCircle size={12} fill="currentColor" className="opacity-20 group-hover:opacity-100" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 pt-4">
+                          <div className="flex flex-col items-end">
+                            <p className={`text-base font-black tracking-tighter ${client.total_debt > 0 ? 'text-red-500' : client.total_debt < 0 ? 'text-emerald-500' : 'text-foreground'}`}>
+                              {Math.abs(client.total_debt || 0).toLocaleString()} F
+                            </p>
+                            <p className="text-[8px] font-bold text-muted-foreground/40 uppercase">Dette actuelle</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Loyalty Progress Bar */}
+                      <div className="mt-1 bg-muted/30 p-2 rounded-xl border border-border/40">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground flex items-center gap-1">
+                            <Star size={8} className="text-amber-500" fill="currentColor"/> 
+                            {client.loyalty_points || 0} Points
+                          </span>
+                          {next.next && (
+                            <span className="text-[7px] font-bold text-muted-foreground italic">
+                              +{next.remaining} pts vers {next.next.name}
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-1 bg-muted rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${next.progress}%` }}
+                            className={clsx("h-full", next.next ? "bg-amber-500" : "bg-blue-600")}
+                          />
+                        </div>
+                      </div>
+
+                      {limit > 0 && (
+                        <div className="space-y-1 mt-1">
+                          <div className="flex justify-between text-[7px] font-black uppercase text-muted-foreground/60">
+                            <span>Utilisation Crédit {Math.round(ratio)}%</span>
+                            <span>Limite: {limit.toLocaleString()} F</span>
+                          </div>
+                          <div className="h-0.5 bg-muted rounded-full overflow-hidden">
+                            <div style={{ width: `${Math.min(100, ratio)}%` }} className={`h-full ${ratio >= 100 ? 'bg-red-500' : ratio >= 80 ? 'bg-orange-500' : 'bg-primary'}`}/>
+                          </div>
                         </div>
                       )}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0 pt-4">
-                    <div className="flex flex-col items-end">
-                      <p className={`text-base font-black tracking-tighter ${client.total_debt > 0 ? 'text-red-500' : client.total_debt < 0 ? 'text-emerald-500' : 'text-foreground'}`}>
-                        {Math.abs(client.total_debt || 0).toLocaleString()} F
-                      </p>
-                      <p className="text-[8px] font-bold text-muted-foreground/40 uppercase">Dette actuelle</p>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Loyalty Progress Bar */}
-                <div className="mt-1 bg-muted/30 p-2 rounded-xl border border-border/40">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[8px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                      <Star size={8} className="text-amber-500" fill="currentColor"/> 
-                      {client.loyalty_points || 0} Points
-                    </span>
-                    {next.next && (
-                      <span className="text-[7px] font-bold text-muted-foreground italic">
-                        +{next.remaining} pts vers {next.next.name}
-                      </span>
-                    )}
-                  </div>
-                  <div className="h-1 bg-muted rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${next.progress}%` }}
-                      className={clsx("h-full", next.next ? "bg-amber-500" : "bg-blue-600")}
-                    />
-                  </div>
-                </div>
+                      {client.pending_items && (
+                        <div className="px-2 py-1 bg-primary/5 rounded-lg border border-primary/10 flex items-center gap-2">
+                          <Package size={10} className="text-primary shrink-0" />
+                          <p className="text-[8px] font-bold text-primary/80 line-clamp-1 uppercase italic">{client.pending_items}</p>
+                        </div>
+                      )}
 
-                {limit > 0 && (
-                  <div className="space-y-1 mt-1">
-                    <div className="flex justify-between text-[7px] font-black uppercase text-muted-foreground/60">
-                      <span>Utilisation Crédit {Math.round(ratio)}%</span>
-                      <span>Limite: {limit.toLocaleString()} F</span>
-                    </div>
-                    <div className="h-0.5 bg-muted rounded-full overflow-hidden">
-                      <div style={{ width: `${Math.min(100, ratio)}%` }} className={`h-full ${ratio >= 100 ? 'bg-red-500' : ratio >= 80 ? 'bg-orange-500' : 'bg-primary'}`}/>
-                    </div>
-                  </div>
-                )}
-
-                {client.pending_items && (
-                  <div className="px-2 py-1 bg-primary/5 rounded-lg border border-primary/10 flex items-center gap-2">
-                    <Package size={10} className="text-primary shrink-0" />
-                    <p className="text-[8px] font-bold text-primary/80 line-clamp-1 uppercase italic">{client.pending_items}</p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1 flex-wrap">
-                  <div className="flex gap-1">
-                    <button onClick={() => updateUi({ detailClient: client })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all" title="Historique & Fidélité"><History size={12} /></button>
-                    <button onClick={() => updateUi({ activeClient: { type: 'note', ...client } })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all" title="Notes marchandise"><Package size={12} /></button>
-                  </div>
-                  <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
-                    {client.phone && <button onClick={() => handleWhatsAppRelance(client)} className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><MessageCircle size={14} /></button>}
-                    <button onClick={() => updateUi({ activeClient: { type: 'pay', ...client } })} className="btn-ultra-compact bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white">ENCAISSER</button>
-                    <button onClick={() => updateUi({ activeClient: { type: 'add', ...client } })} className="btn-ultra-compact bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white">+ DETTE</button>
-                  </div>
-                </div>
-              </motion.div>
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 mt-1 flex-wrap">
+                        <div className="flex gap-1">
+                          <button onClick={() => updateUi({ detailClient: client })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all" title="Historique & Fidélité"><History size={12} /></button>
+                          <button onClick={() => updateUi({ activeClient: { type: 'note', ...client } })} className="p-1.5 bg-muted/40 text-muted-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-all" title="Notes marchandise"><Package size={12} /></button>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
+                          {client.phone && <button onClick={() => handleWhatsAppRelance(client)} className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><MessageCircle size={14} /></button>}
+                          <button onClick={() => updateUi({ activeClient: { type: 'pay', ...client } })} className="btn-ultra-compact bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white">ENCAISSER</button>
+                          <button onClick={() => updateUi({ activeClient: { type: 'add', ...client } })} className="btn-ultra-compact bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white">+ DETTE</button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
             )
           })}
         </AnimatePresence>

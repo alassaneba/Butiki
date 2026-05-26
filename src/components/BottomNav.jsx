@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, Wallet, Users, Settings, TrendingUp, Smartphone
+  LayoutDashboard, Wallet, Users, Settings, TrendingUp, ShoppingBag
 } from 'lucide-react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
@@ -14,8 +14,8 @@ export default function BottomNav() {
   // Les 5 items les plus importants filtrés dynamiquement
   const allBottomItems = [
     { path: '/', label: 'Accueil', icon: LayoutDashboard, moduleId: 'dashboard' },
+    { path: '/ventes', label: 'Ventes', icon: ShoppingBag, moduleId: 'sales' },
     { path: '/caisse', label: 'Caisse', icon: Wallet, moduleId: 'caisse' },
-    { path: '/credit', label: 'Crédit', icon: Smartphone, moduleId: 'credit' },
     { path: '/clients', label: 'Clients', icon: Users, moduleId: 'clients' },
     { path: '/stats', label: 'Stats', icon: TrendingUp, moduleId: 'previsions' },
     { path: '/settings', label: 'Réglages', icon: Settings, moduleId: 'settings' },
@@ -26,11 +26,18 @@ export default function BottomNav() {
     const role = activeUser.role || 'caissier'
     const defaultPermissions = (role === 'gerant' || role === 'proprietaire')
       ? { full_access: true, modules: [] } 
-      : { modules: ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'] }
+      : { modules: ['dashboard', 'sales', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'clients'] }
     
-    const permissions = config?.role_permissions?.[role] || defaultPermissions
+    let permissions = config?.role_permissions?.[role] || defaultPermissions
+    if (permissions.modules && !permissions.modules.includes('sales')) {
+      permissions = { ...permissions, modules: [...permissions.modules, 'sales'] }
+    }
     
-    const activeModules = config?.active_modules || ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'charges', 'depot', 'clients', 'fournisseurs', 'historique', 'previsions', 'settings']
+    let activeModules = config?.active_modules || ['dashboard', 'caisse', 'stock', 'pain', 'gaz', 'credit', 'charges', 'depot', 'clients', 'fournisseurs', 'historique', 'previsions', 'settings', 'tresorerie', 'procurement', 'audit', 'sales', 'hr', 'logistics']
+    if (!activeModules.includes('sales')) {
+      activeModules = [...activeModules, 'sales']
+    }
+    
     const isGloballyActive = activeModules.includes(item.moduleId)
     if (!isGloballyActive && item.moduleId !== 'settings') return false
 

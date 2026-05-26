@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Loader2 } from 'lucide-react'
@@ -9,6 +9,7 @@ import PinLock, { useSessionTimeout } from './components/PinLock'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import CloudSyncManager from './components/CloudSyncManager'
 import { useStore } from './store/useStore'
+import { hydrateHeavyData } from './store/syncStorage'
 
 // Imports fainéants (Lazy Load) pour le code splitting
 // Imports fainéants (Lazy Load) pour le code splitting - OPTIMISÉ PRO MAX
@@ -57,13 +58,22 @@ function AppInner() {
   const { locked, unlock } = useSessionTimeout()
   const stock = useStore(state => state.stock)
   const applySenegalSeed = useStore(state => state.applySenegalSeed)
+  const [isHeavyDataHydrated, setIsHeavyDataHydrated] = useState(false)
+
+  useEffect(() => {
+    hydrateHeavyData().then(() => setIsHeavyDataHydrated(true))
+  }, [])
 
   // Auto-seed si le stock est vide (pour le confort de l'utilisateur)
   useEffect(() => {
-    if (stock && stock.length === 0) {
+    if (isHeavyDataHydrated && stock && stock.length === 0) {
       applySenegalSeed()
     }
-  }, [stock, applySenegalSeed])
+  }, [stock, applySenegalSeed, isHeavyDataHydrated])
+
+  if (!isHeavyDataHydrated) {
+    return <PageLoader />
+  }
 
   return (
     <>

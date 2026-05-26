@@ -32,7 +32,7 @@ export default function Caisse() {
   const addInflow = useStore(state => state.addInflow)
   const transferFintechToCash = useStore(state => state.transferFintechToCash)
   const transferToVault = useStore(state => state.transferToVault)
-  const fintech_balances = useStore(state => state.fintech_balances || { wave: 0, orange: 0 })
+  const fintech_balances = useStore(state => state.fintech_balances[state.activeBoutiqueId || 'b1']) || { wave: 0, orange: 0 }
   const logAction = useStore(state => state.logAction)
   const config = useStore(state => state.config)
   const activeBoutiqueId = useStore(state => state.activeBoutiqueId)
@@ -84,14 +84,8 @@ export default function Caisse() {
 
   useEffect(() => {
     if (activeUser?.name) {
-      setOpening(p => {
-        if (!p.manager) return { ...p, manager: activeUser.name }
-        return p
-      })
-      setClosing(p => {
-        if (!p.manager) return { ...p, manager: activeUser.name }
-        return p
-      })
+      setOpening(p => p.manager === activeUser.name ? p : { ...p, manager: activeUser.name })
+      setClosing(p => p.manager === activeUser.name ? p : { ...p, manager: activeUser.name })
     }
   }, [activeUser?.name])
 
@@ -209,7 +203,7 @@ export default function Caisse() {
       </header>
 
       {/* MODAL FINTECH */}
-       <ResponsiveDialog open={dialogs.fintech} onOpenChange={(v) => setDialogs(p => ({ ...p, fintech: v }))}>
+       <ResponsiveDialog open={dialogs.fintech} onOpenChange={(v) => setDialogs(p => p.fintech === v ? p : ({ ...p, fintech: v }))}>
         <ResponsiveDialogContent>
            <ResponsiveDialogHeader>
              <ResponsiveDialogTitle>Paiement Fintech</ResponsiveDialogTitle>
@@ -491,7 +485,7 @@ export default function Caisse() {
       {/* DRAWERS */}
 
       {/* Clôture Caisse */}
-      <ResponsiveDialog open={dialogs.close} onOpenChange={(v) => setDialogs(p => ({ ...p, close: v }))}>
+      <ResponsiveDialog open={dialogs.close} onOpenChange={(v) => setDialogs(p => p.close === v ? p : ({ ...p, close: v }))}>
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>Clôture de Session</ResponsiveDialogTitle>
@@ -570,7 +564,7 @@ export default function Caisse() {
       </ResponsiveDialog>
 
       {/* Transfert vers Dépôt */}
-      <ResponsiveDialog open={dialogs.vault} onOpenChange={(v) => setDialogs(p => ({ ...p, vault: v }))}>
+      <ResponsiveDialog open={dialogs.vault} onOpenChange={(v) => setDialogs(p => p.vault === v ? p : ({ ...p, vault: v }))}>
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>Transfert vers Dépôt</ResponsiveDialogTitle>
@@ -597,7 +591,7 @@ export default function Caisse() {
       </ResponsiveDialog>
 
       {/* Ajout Dépense */}
-      <ResponsiveDialog open={dialogs.expenseD} onOpenChange={(v) => setDialogs(p => ({ ...p, expenseD: v }))}>
+      <ResponsiveDialog open={dialogs.expenseD} onOpenChange={(v) => setDialogs(p => p.expenseD === v ? p : ({ ...p, expenseD: v }))}>
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>Nouvelle Dépense</ResponsiveDialogTitle>
@@ -681,7 +675,7 @@ export default function Caisse() {
       </ResponsiveDialog>
 
       {/* Ajout Entrée */}
-      <ResponsiveDialog open={dialogs.inflow} onOpenChange={(v) => setDialogs(p => ({ ...p, inflow: v }))}>
+      <ResponsiveDialog open={dialogs.inflow} onOpenChange={(v) => setDialogs(p => p.inflow === v ? p : ({ ...p, inflow: v }))}>
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>Nouvelle Entrée</ResponsiveDialogTitle>
@@ -716,7 +710,7 @@ export default function Caisse() {
       </ResponsiveDialog>
 
       {/* Transfert Fintech -> Cash */}
-      <ResponsiveDialog open={dialogs.transfer} onOpenChange={(v) => setDialogs(p => ({ ...p, transfer: v }))}>
+      <ResponsiveDialog open={dialogs.transfer} onOpenChange={(v) => setDialogs(p => p.transfer === v ? p : ({ ...p, transfer: v }))}>
         <ResponsiveDialogContent>
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>Retrait (Cash-out)</ResponsiveDialogTitle>
