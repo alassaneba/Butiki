@@ -46,12 +46,13 @@ export const useStore = create(
       // le payload de sérialisation (audit_log = jusqu'à 500 entrées JSON)
       // 🚀 P3b - Exclure également les tableaux lourds pour éviter de geler l'app
       partialize: (state) => {
-        // eslint-disable-next-line no-unused-vars
+        /* eslint-disable no-unused-vars */
         const { 
           audit_log, notifications, 
           sales, expenses, daily_cash_register, inflows, transfers, 
           ...persistedState 
         } = state
+        /* eslint-enable no-unused-vars */
         return persistedState
       },
     }

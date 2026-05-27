@@ -21,6 +21,7 @@ export default function Gaz() {
   const payGasLog = useStore(state => state.payGasLog)
   const addSupplier = useStore(state => state.addSupplier)
   const config = useStore(state => state.config)
+  const priceB2_7 = config?.prices?.gaz?.b2_7 ?? 1500;
   const priceB6 = config?.prices?.gaz?.b6 ?? 2800;
   const priceB9 = config?.prices?.gaz?.b9 ?? 4175;
   const priceB12 = config?.prices?.gaz?.b12 ?? 6000;
@@ -57,6 +58,7 @@ export default function Gaz() {
   }, {})
 
   const [supplierId, setSupplierId] = useState('')
+  const [b2_7Qty, setB2_7Qty] = useState('')
   const [b6Qty, setB6Qty] = useState('')
   const [b9Qty, setB9Qty] = useState('')
   const [b12Qty, setB12Qty] = useState('')
@@ -65,22 +67,25 @@ export default function Gaz() {
 
   const handleAddLog = (e) => {
     e.preventDefault()
+    const q2_7 = Number(b2_7Qty) || 0;
     const q6 = Number(b6Qty) || 0;
     const q9 = Number(b9Qty) || 0;
     const q12 = Number(b12Qty) || 0;
 
-    if (!supplierId || (q6 === 0 && q9 === 0 && q12 === 0)) return
+    if (!supplierId || (q2_7 === 0 && q6 === 0 && q9 === 0 && q12 === 0)) return
     
-    const totalToPay = (q6 * priceB6) + (q9 * priceB9) + (q12 * priceB12);
+    const totalToPay = (q2_7 * priceB2_7) + (q6 * priceB6) + (q9 * priceB9) + (q12 * priceB12);
 
     addGasLog({
       supplier_id: supplierId,
+      b2_7_qty: q2_7,
       b6_qty: q6,
       b9_qty: q9,
       b12_qty: q12,
       total_to_pay: totalToPay
     })
     
+    setB2_7Qty('')
     setB6Qty('')
     setB9Qty('')
     setB12Qty('')
@@ -129,7 +134,7 @@ export default function Gaz() {
                  const supplier = suppliers.find(s => s.id === log.supplier_id)?.name || 'Inconnu'
                  const logDate = new Date(log.date);
                  const timeLabel = logDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-                 const totalQty = (log.b6_qty || 0) + (log.b9_qty || 0) + (log.b12_qty || 0);
+                 const totalQty = (log.b2_7_qty || 0) + (log.b6_qty || 0) + (log.b9_qty || 0) + (log.b12_qty || 0);
 
                  return (
                    <motion.div 
@@ -160,8 +165,9 @@ export default function Gaz() {
                      </div>
 
                      <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-4 gap-2">
                            {[
+                             { label: 'B2,7KG', val: log.b2_7_qty || 0 },
                              { label: 'B6KG', val: log.b6_qty || 0 },
                              { label: 'B9KG', val: log.b9_qty || 0 },
                              { label: 'B12KG', val: log.b12_qty || 0 }
@@ -248,6 +254,7 @@ export default function Gaz() {
                                </div>
                              </div>
                              <div className="flex flex-wrap gap-1">
+                               {(log.b2_7_qty > 0) && <span className="bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded text-[8px] font-black uppercase border border-border/50">B2,7: {log.b2_7_qty}</span>}
                                {(log.b6_qty > 0) && <span className="bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded text-[8px] font-black uppercase border border-border/50">B6: {log.b6_qty}</span>}
                                {(log.b9_qty > 0) && <span className="bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded text-[8px] font-black uppercase border border-border/50">B9: {log.b9_qty}</span>}
                                {(log.b12_qty > 0) && <span className="bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded text-[8px] font-black uppercase border border-border/50">B12: {log.b12_qty}</span>}
@@ -303,6 +310,7 @@ export default function Gaz() {
                   <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-center">Quantités Livrées</p>
                   <div className="space-y-2">
                     {[
+                      { label: 'B2,7kg', val: b2_7Qty, set: setB2_7Qty, price: priceB2_7 },
                       { label: 'B6kg', val: b6Qty, set: setB6Qty, price: priceB6 },
                       { label: 'B9kg', val: b9Qty, set: setB9Qty, price: priceB9 },
                       { label: 'B12kg', val: b12Qty, set: setB12Qty, price: priceB12 }

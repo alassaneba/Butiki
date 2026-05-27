@@ -1,6 +1,5 @@
 import React, { useRef } from 'react'
 import { Search, RotateCcw, Wallet, CreditCard, Smartphone, Clock, History } from 'lucide-react'
-import { motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
@@ -9,7 +8,7 @@ const formatTime = (dateStr) => {
   try {
     const d = new Date(dateStr)
     return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  } catch (e) { return '--:--' }
+  } catch (err) { return '--:--' }
 }
 
 function SaleHistoryRow({ sale, clients, updateHistory }) {

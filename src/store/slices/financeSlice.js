@@ -161,6 +161,13 @@ export const createFinanceSlice = (set, get) => ({
     set((state) => {
       const currentFintech = state.fintech_balances[boutiqueId] || {}
       
+      const todayDateString = new Date().toLocaleDateString()
+      const todaySales = (state.sales || []).filter(s => new Date(s.date).toLocaleDateString() === todayDateString && (s.boutiqueId || 'b1') === boutiqueId && s.status !== 'cancelled')
+      const theoreticalCashSales = todaySales.reduce((acc, sale) => {
+         const cashPayments = sale.payments ? sale.payments.filter(p => p.method === 'cash') : (sale.paymentMethod === 'cash' ? [{amount: sale.totalAmount}] : [])
+         return acc + cashPayments.reduce((sum, p) => sum + Number(p.amount), 0)
+      }, 0)
+      
       return {
         daily_cash_register: state.daily_cash_register.map(register => {
           if (register.id === id) {
@@ -171,12 +178,20 @@ export const createFinanceSlice = (set, get) => ({
               discrepancies[provider] = realValue - systemValue
             })
             
+            // Expected cash (inflows_total already includes POS cash sales because addSale creates an inflow)
+            // Or if POS sales aren't in inflows_total, they should be added.
+            // But we saw earlier that addSale calls addInflow, so they are in inflows_total.
+            // But let's look closely at `Caisse.jsx`: expectedCash = opening_balance + cashInflows - cashExpenses
+            const expectedCash = Number(register.opening_balance) + Number(inflows_total) - Number(expenses_total)
+            const cashDiscrepancy = Number(cash) - expectedCash
+            
             return {
               ...register,
               closing_balance: Number(cash),
               closing_fintech: fintech_closing,
               closing_manager_name: closing_manager_name || register.manager_name,
-              calculated_sales: (Number(cash) + Number(expenses_total)) - (Number(register.opening_balance) + Number(inflows_total)),
+              calculated_sales: theoreticalCashSales,
+              cash_discrepancy: cashDiscrepancy,
               fintech_snapshots: { ...currentFintech },
               fintech_discrepancies: discrepancies
             }
@@ -185,7 +200,13 @@ export const createFinanceSlice = (set, get) => ({
         })
       }
     })
-    get().logAction('Clôture Caisse', `Clôture par ${closing_manager_name}`)
+    
+    const register = get().daily_cash_register.find(r => r.id === id)
+    if (register && register.cash_discrepancy !== 0) {
+      get().logAction('Clôture Caisse (Écart)', `Écart de ${register.cash_discrepancy} F déclaré par ${closing_manager_name || 'Inconnu'}`)
+    } else {
+      get().logAction('Clôture Caisse', `Clôture par ${closing_manager_name || 'Inconnu'} (Solde Parfait)`)
+    }
     toast.success('Caisse clôturée avec succès')
   },
 

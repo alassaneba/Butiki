@@ -1,9 +1,10 @@
 import { get, set as idbSet } from 'idb-keyval'
 import { useStore } from './useStore'
 
-const HEAVY_KEYS = ['sales', 'expenses', 'daily_cash_register', 'inflows', 'transfers']
+const HEAVY_KEYS = ['sales', 'expenses', 'daily_cash_register', 'inflows', 'transfers', 'audit_log', 'notifications']
 
 let isSubscribed = false
+const saveTimers = {}
 
 export const hydrateHeavyData = async () => {
   const promises = HEAVY_KEYS.map(async (key) => {
@@ -26,9 +27,15 @@ export const hydrateHeavyData = async () => {
     useStore.subscribe((state) => {
       HEAVY_KEYS.forEach(key => {
         if (state[key] !== prevState[key]) {
-          idbSet(`butik-${key}`, state[key]).catch(err => {
-            console.error(`Failed to save ${key} to IDB`, err)
-          })
+          // Debounce the save to IndexedDB to avoid UI freezes
+          if (saveTimers[key]) {
+            clearTimeout(saveTimers[key])
+          }
+          saveTimers[key] = setTimeout(() => {
+            idbSet(`butik-${key}`, state[key]).catch(err => {
+              console.error(`Failed to save ${key} to IDB`, err)
+            })
+          }, 1000)
         }
       })
       prevState = state

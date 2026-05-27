@@ -147,10 +147,19 @@ export const createModulesSlice = (set, get) => ({
     );
 
     const newLogs = [...state.bread_logs];
+    let qtyDiff = quantity;
 
     if (existingLogIndex >= 0) {
       const existing = { ...newLogs[existingLogIndex] };
       const quarts = existing.received_quarts ? { ...existing.received_quarts } : { q1: 0, q2: 0, q3: 0, q4: 0 };
+      
+      let oldQty = 0;
+      if (quart === '1er Quart') oldQty = quarts.q1;
+      if (quart === '2e Quart') oldQty = quarts.q2;
+      if (quart === '3e Quart') oldQty = quarts.q3;
+      if (quart === '4e Quart') oldQty = quarts.q4;
+      
+      qtyDiff = quantity - oldQty;
       
       if (quart === '1er Quart') quarts.q1 = quantity;
       if (quart === '2e Quart') quarts.q2 = quantity;
@@ -200,7 +209,61 @@ export const createModulesSlice = (set, get) => ({
     }
 
     get().logAction('Livraison Pain', `${quantity} miches de ${get().suppliers.find(s => s.id === supplier_id)?.name}`)
-    return { bread_logs: newLogs };
+
+    // --- Update Stock ---
+    let stock = [...state.stock];
+    let stock_logs = [...state.stock_logs];
+    
+    if (qtyDiff !== 0) {
+      let stockBreadIndex = stock.findIndex(s => s.category === 'pain');
+      const configPrices = get().config?.prices?.pain || { miche: 135, deuxTiers: 90, demi: 65, unTiers: 45 };
+      const configPricesVente = get().config?.prices?.pain_vente || { miche: 150, deuxTiers: 100, demi: 75, unTiers: 50 };
+      
+      let stockBreadId = null;
+      if (stockBreadIndex === -1) {
+        stockBreadId = crypto.randomUUID();
+        const newBread = {
+          id: stockBreadId,
+          name: 'Pain (Miches)',
+          category: 'pain',
+          buying_price: configPrices.miche,
+          selling_price: configPricesVente.miche,
+          current_stock: qtyDiff,
+          boutiqueId: get().activeBoutiqueId,
+          barcode: 'PAIN'
+        };
+        stock.push(newBread);
+        stock_logs.unshift({
+          id: crypto.randomUUID(),
+          date: new Date().toISOString(),
+          productId: stockBreadId,
+          productName: newBread.name,
+          type: qtyDiff > 0 ? 'IN' : 'OUT',
+          quantity: Math.abs(qtyDiff),
+          reason: 'Ajustement Livraison Pain',
+          boutiqueId: get().activeBoutiqueId
+        });
+      } else {
+        stockBreadId = stock[stockBreadIndex].id;
+        const currentQty = stock[stockBreadIndex].current_stock || 0;
+        stock[stockBreadIndex] = {
+          ...stock[stockBreadIndex],
+          current_stock: currentQty + qtyDiff
+        };
+        stock_logs.unshift({
+          id: crypto.randomUUID(),
+          date: new Date().toISOString(),
+          productId: stockBreadId,
+          productName: stock[stockBreadIndex].name,
+          type: qtyDiff > 0 ? 'IN' : 'OUT',
+          quantity: Math.abs(qtyDiff),
+          reason: 'Ajustement Livraison Pain',
+          boutiqueId: get().activeBoutiqueId
+        });
+      }
+    }
+
+    return { bread_logs: newLogs, stock, stock_logs: stock_logs.slice(0, 500) };
   }),
   
   updateBreadLogReturn: (id, returned_quantity, total_to_pay) => set((state) => ({
@@ -227,10 +290,51 @@ export const createModulesSlice = (set, get) => ({
 
   // Actions Gas
   addGasLog: (log) => {
-    get().logAction('Livraison Gaz', `${log.received_quantity} bouteilles de ${get().suppliers.find(s => s.id === log.supplier_id)?.name}`)
-    set((state) => ({
-      gas_logs: [...state.gas_logs, { ...log, id: crypto.randomUUID(), date: new Date().toISOString(), boutiqueId: get().activeBoutiqueId }]
-    }))
+    const totalQty = (log.b2_7_qty || 0) + (log.b6_qty || 0) + (log.b9_qty || 0) + (log.b12_qty || 0);
+    get().logAction('Livraison Gaz', `${totalQty} bouteilles de ${get().suppliers.find(s => s.id === log.supplier_id)?.name}`);
+    
+    set((state) => {
+      let stock = [...state.stock];
+      let stock_logs = [...state.stock_logs];
+      
+      const configPrices = get().config?.prices?.gaz || { b2_7: 1500, b6: 2800, b9: 4175, b12: 6000 };
+      const configPricesVente = get().config?.prices?.gaz_vente || { b2_7: 1500, b6: 2800, b9: 4175, b12: 6000 };
+
+      const updateGasStock = (type, qty, name, bPrice, sPrice) => {
+        if (qty > 0) {
+          let idx = stock.findIndex(s => s.category === 'gaz' && s.name === name);
+          let stockId = null;
+          if (idx === -1) {
+            stockId = crypto.randomUUID();
+            const newGas = {
+              id: stockId, name, category: 'gaz',
+              buying_price: bPrice, selling_price: sPrice,
+              current_stock: qty, boutiqueId: get().activeBoutiqueId, barcode: `GAZ_${type}`
+            };
+            stock.push(newGas);
+          } else {
+            stockId = stock[idx].id;
+            stock[idx] = { ...stock[idx], current_stock: (stock[idx].current_stock || 0) + qty };
+          }
+          stock_logs.unshift({
+            id: crypto.randomUUID(), date: new Date().toISOString(),
+            productId: stockId, productName: name, type: 'IN', quantity: qty,
+            reason: 'Livraison Gaz', boutiqueId: get().activeBoutiqueId
+          });
+        }
+      };
+
+      updateGasStock('b2_7', log.b2_7_qty || 0, 'Gaz B2,7kg', configPrices.b2_7, configPricesVente.b2_7);
+      updateGasStock('b6', log.b6_qty || 0, 'Gaz B6kg', configPrices.b6, configPricesVente.b6);
+      updateGasStock('b9', log.b9_qty || 0, 'Gaz B9kg', configPrices.b9, configPricesVente.b9);
+      updateGasStock('b12', log.b12_qty || 0, 'Gaz B12kg', configPrices.b12, configPricesVente.b12);
+
+      return {
+        gas_logs: [...state.gas_logs, { ...log, id: crypto.randomUUID(), date: new Date().toISOString(), boutiqueId: get().activeBoutiqueId }],
+        stock,
+        stock_logs: stock_logs.slice(0, 500)
+      };
+    })
   },
 
   payGasLog: (logId, supplierName) => set((state) => {
